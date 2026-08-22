@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "d:\\projeto_dashboard\\dashboard-deposito\\backend\\DepositoApi\\DepositoApi.csproj": {}
+    "D:\\projeto_dashboard\\dashboard-deposito\\backend\\DepositoApi\\DepositoApi.csproj": {}
   },
   "projects": {
-    "d:\\projeto_dashboard\\dashboard-deposito\\backend\\DepositoApi\\DepositoApi.csproj": {
+    "D:\\projeto_dashboard\\dashboard-deposito\\backend\\DepositoApi\\DepositoApi.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "d:\\projeto_dashboard\\dashboard-deposito\\backend\\DepositoApi\\DepositoApi.csproj",
+        "projectUniqueName": "D:\\projeto_dashboard\\dashboard-deposito\\backend\\DepositoApi\\DepositoApi.csproj",
         "projectName": "DepositoApi",
-        "projectPath": "d:\\projeto_dashboard\\dashboard-deposito\\backend\\DepositoApi\\DepositoApi.csproj",
+        "projectPath": "D:\\projeto_dashboard\\dashboard-deposito\\backend\\DepositoApi\\DepositoApi.csproj",
         "packagesPath": "C:\\Users\\Pedro\\.nuget\\packages\\",
-        "outputPath": "d:\\projeto_dashboard\\dashboard-deposito\\backend\\DepositoApi\\obj\\",
+        "outputPath": "D:\\projeto_dashboard\\dashboard-deposito\\backend\\DepositoApi\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\Pedro\\AppData\\Roaming\\NuGet\\NuGet.Config"
