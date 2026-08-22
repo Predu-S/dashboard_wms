@@ -5,7 +5,7 @@
   --border: #262b35;
   --text: #e6e9f0;
   --text-muted: #8b93a7;
-  --accent: #4f8cff;
+  --accent: #00FFBB;
   --alerta: #ff5c5c;
 }
 
@@ -290,7 +290,7 @@ td {
   display: inline-block;
   width: 80px;
   height: 6px;
-  background: #00FFBB;
+  background: #2a2f3a;
   border-radius: 4px;
   overflow: hidden;
   vertical-align: middle;
