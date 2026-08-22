@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("DepositoApi")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0465fa0662a76898b7f3ebcdadabaa2a36d19bdc")]
 [assembly: System.Reflection.AssemblyProductAttribute("DepositoApi")]
 [assembly: System.Reflection.AssemblyTitleAttribute("DepositoApi")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
