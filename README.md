@@ -1,77 +1,46 @@
-# Dashboard de Depósito — Esqueleto do Projeto
+# Depósito BI 📦
 
-Protótipo inicial da sua aplicação Web (backend .NET/C# + frontend React),
-focado no módulo de ocupação de depósito/armazém.
+Dashboard de ocupação de armazém/depósito — protótipo de um produto de BI
+white-label, com backend em **.NET/C#** e frontend em **React**.
 
-## Estrutura
+![status](https://img.shields.io/badge/status-em%20desenvolvimento-blue)
 
-```
-dashboard-deposito/
-├── backend/DepositoApi/     → API .NET (ASP.NET Core Web API)
-└── frontend/                → App React (Vite)
-```
+## ✨ Funcionalidades
 
-## Como rodar o backend (.NET)
+- KPIs de ocupação (geral, capacidade total, posições ocupadas, endereços críticos)
+- Gráfico de ocupação por Depósito
+- Tabela detalhada por endereço (Depósito / Rua / Prédio / Andar / Apartamento)
+- Filtro por Depósito
+- Integração com Firebird via view SQL (ou dados fictícios para demo)
 
-Pré-requisito: .NET 8 SDK instalado (https://dotnet.microsoft.com/download).
+## 🛠️ Stack
+
+| Camada    | Tecnologia                        |
+|-----------|------------------------------------|
+| Backend   | ASP.NET Core Web API (.NET 8)      |
+| Banco     | Firebird (via `FirebirdSql.Data.FirebirdClient` + Dapper) |
+| Frontend  | React + Vite + Recharts            |
+
+## 🚀 Rodando localmente
 
 ```bash
+# Backend
 cd backend/DepositoApi
 dotnet restore
 dotnet run
-```
 
-Por padrão a API já sobe usando **dados fictícios** (`OcupacaoServiceMock`),
-então dá pra testar o frontend sem precisar do Firebird configurado ainda.
-A API deve subir em algo como `http://localhost:5000` (confira a porta no
-terminal ao rodar).
-
-### Conectando no Firebird de verdade
-
-1. Edite `appsettings.json` e ajuste a `ConnectionStrings:FirebirdDefault`
-   com os dados reais do seu servidor Firebird.
-2. Ajuste a query em `Services/OcupacaoService.cs` (marcada com `TODO`) para
-   bater com o nome real da tabela/view de endereços do seu WMS — hoje ela
-   assume uma tabela `WMS_ENDERECO` com os campos Depósito/Rua/Prédio/Andar/
-   Apartamento + capacidade/quantidade ocupada. Ajuste para o seu schema real.
-3. No `appsettings.json` (ou `appsettings.Development.json`), defina:
-   ```json
-   "UsarDadosFicticios": false
-   ```
-4. Rode `dotnet run` novamente.
-
-## Como rodar o frontend (React)
-
-Pré-requisito: Node.js 18+ instalado.
-
-```bash
+# Frontend (em outro terminal)
 cd frontend
 npm install
 npm run dev
 ```
 
-O app abre em `http://localhost:5173` e já tenta consumir a API em
-`http://localhost:5000`. Se sua API subir em outra porta, crie um arquivo
-`.env` dentro de `frontend/` com:
+Por padrão a API sobe com **dados fictícios** (`UsarDadosFicticios: true` no
+`appsettings.json`), então dá pra testar sem precisar do Firebird configurado.
 
-```
-VITE_API_URL=http://localhost:5000
-```
+Para conectar num Firebird real, ajuste `ConnectionStrings:FirebirdDefault`
+no `appsettings.json` e mude `UsarDadosFicticios` para `false`.
 
-## O que já está pronto
+## 📄 Licença
 
-- Endpoint `GET /api/estoque/ocupacao` — lista detalhada por endereço.
-- Endpoint `GET /api/estoque/ocupacao/resumo` — agregado por Depósito (usado
-  no gráfico de barras).
-- Tela React com cards de KPI (ocupação geral, capacidade total, posições
-  ocupadas, endereços críticos), gráfico de ocupação por depósito (Recharts)
-  e tabela detalhada por endereço com barra de progresso.
-
-## Próximos passos sugeridos
-
-- Trocar a query mock pela real, ajustando ao seu schema Firebird.
-- Adicionar autenticação (ex.: JWT) antes de expor a API publicamente.
-- Pensar na camada multi-tenant (tabela de clientes + connection string
-  dinâmica por cliente) quando for atender mais de uma empresa.
-- Adicionar mais módulos (Vendas, Fiscal etc.) seguindo o mesmo padrão de
-  Controller + Service + componente React.
+Projeto privado / uso interno.
