@@ -34,3 +34,4 @@ D:\projeto_dashboard\dashboard-deposito\backend\DepositoApi\obj\Debug\net8.0\ref
 D:\projeto_dashboard\dashboard-deposito\backend\DepositoApi\obj\Debug\net8.0\DepositoApi.pdb
 D:\projeto_dashboard\dashboard-deposito\backend\DepositoApi\obj\Debug\net8.0\DepositoApi.genruntimeconfig.cache
 D:\projeto_dashboard\dashboard-deposito\backend\DepositoApi\obj\Debug\net8.0\ref\DepositoApi.dll
+D:\projeto_dashboard\dashboard-deposito\backend\depositoapi\obj\Debug\net8.0\DepositoApi.sourcelink.json

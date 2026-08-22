@@ -19,7 +19,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
-    ?? new[] { "https://dashboardwms.netlify.app" };
+    ?? new[] { "http://localhost:5000" };
 
 builder.Services.AddCors(options =>
 {

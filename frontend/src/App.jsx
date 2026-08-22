@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { LayoutDashboard, Package, Warehouse, Settings } from 'lucide-react'
+import { LayoutDashboard, Package, Warehouse, Settings, ChevronLeft, ChevronRight } from 'lucide-react'
 import { api } from './api'
 import KpiCard from './components/KpiCard'
 import OcupacaoChart from './components/OcupacaoChart'
@@ -15,6 +15,8 @@ export default function App() {
   const [erro, setErro] = useState(null)
 
   const [depositoSelecionado, setDepositoSelecionado] = useState('todos')
+  const [somenteCriticos, setSomenteCriticos] = useState(false)
+  const [sidebarRecolhida, setSidebarRecolhida] = useState(false)
 
   useEffect(() => {
     Promise.all([api.ocupacaoResumo(), api.ocupacaoDetalhada()])
@@ -36,32 +38,50 @@ export default function App() {
     [resumo, depositoSelecionado]
   )
 
-  const detalhadoFiltrado = useMemo(
+  const detalhadoPorDeposito = useMemo(
     () => (depositoSelecionado === 'todos' ? detalhado : detalhado.filter((d) => d.deposito === depositoSelecionado)),
     [detalhado, depositoSelecionado]
+  )
+
+  const detalhadoFiltrado = useMemo(
+    () => (somenteCriticos ? detalhadoPorDeposito.filter((d) => d.percentualOcupacao >= 90) : detalhadoPorDeposito),
+    [detalhadoPorDeposito, somenteCriticos]
   )
 
   const capacidadeTotal = resumoFiltrado.reduce((soma, d) => soma + d.capacidadeTotal, 0)
   const ocupadoTotal = resumoFiltrado.reduce((soma, d) => soma + d.quantidadeOcupada, 0)
   const ocupacaoGeral = capacidadeTotal > 0 ? Math.round((ocupadoTotal / capacidadeTotal) * 1000) / 10 : 0
-  const enderecosCriticos = detalhadoFiltrado.filter((d) => d.percentualOcupacao >= 90).length
+  const enderecosCriticos = detalhadoPorDeposito.filter((d) => d.percentualOcupacao >= 90).length
+
+  function alternarSomenteCriticos() {
+    setSomenteCriticos((atual) => !atual)
+  }
 
   return (
     <div className="app">
-      <aside className="sidebar">
-        <div className="sidebar__logo">Depósito BI</div>
+      <aside className={`sidebar ${sidebarRecolhida ? 'sidebar--recolhida' : ''}`}>
+        <div className="sidebar__topo">
+          {!sidebarRecolhida && <div className="sidebar__logo">Depósito BI</div>}
+          <button
+            className="sidebar__toggle"
+            onClick={() => setSidebarRecolhida((atual) => !atual)}
+            title={sidebarRecolhida ? 'Expandir menu' : 'Recolher menu'}
+          >
+            {sidebarRecolhida ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+          </button>
+        </div>
         <nav>
-          <a className="ativo" href="#">
-            <LayoutDashboard size={16} /> Dashboard
+          <a className="ativo" href="#" title="Dashboard">
+            <LayoutDashboard size={16} /> {!sidebarRecolhida && 'Dashboard'}
           </a>
-          <a href="#">
-            <Package size={16} /> Estoque &amp; SKUs
+          <a href="#" title="Estoque & SKUs">
+            <Package size={16} /> {!sidebarRecolhida && 'Estoque & SKUs'}
           </a>
-          <a href="#">
-            <Warehouse size={16} /> WMS / Locação
+          <a href="#" title="WMS / Locação">
+            <Warehouse size={16} /> {!sidebarRecolhida && 'WMS / Locação'}
           </a>
-          <a href="#">
-            <Settings size={16} /> Configurações
+          <a href="#" title="Configurações">
+            <Settings size={16} /> {!sidebarRecolhida && 'Configurações'}
           </a>
         </nav>
       </aside>
@@ -102,8 +122,10 @@ export default function App() {
                 <KpiCard
                   titulo="Endereços Críticos"
                   valor={enderecosCriticos}
-                  subtitulo="≥ 90% de ocupação"
+                  subtitulo={somenteCriticos ? 'Clique para ver todos' : '≥ 90% • clique para filtrar'}
                   tom={enderecosCriticos > 0 ? 'alerta' : 'neutro'}
+                  ativo={somenteCriticos}
+                  onClick={enderecosCriticos > 0 ? alternarSomenteCriticos : undefined}
                 />
               </section>
 

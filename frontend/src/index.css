@@ -5,7 +5,7 @@
   --border: #262b35;
   --text: #e6e9f0;
   --text-muted: #8b93a7;
-  --accent: #00FFBB;
+  --accent: #4f8cff;
   --alerta: #ff5c5c;
 }
 
@@ -45,13 +45,50 @@ body {
   padding: 24px 16px;
   flex-shrink: 0;
   overflow-y: auto;
+  overflow-x: hidden;
+  transition: width 0.18s ease;
+}
+
+.sidebar--recolhida {
+  width: 68px;
+  padding: 24px 10px;
+}
+
+.sidebar__topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 32px;
+}
+
+.sidebar--recolhida .sidebar__topo {
+  justify-content: center;
+}
+
+.sidebar__toggle {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: 6px;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.sidebar__toggle:hover {
+  color: var(--text);
+  border-color: var(--accent);
 }
 
 .sidebar__logo {
   font-weight: 700;
   font-size: 18px;
-  margin-bottom: 32px;
   color: var(--accent);
+  white-space: nowrap;
 }
 
 .sidebar nav {
@@ -69,6 +106,12 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
+  white-space: nowrap;
+}
+
+.sidebar--recolhida nav a {
+  justify-content: center;
+  padding: 10px 0;
 }
 
 .sidebar nav a:hover {
@@ -205,6 +248,24 @@ body {
   border-color: var(--alerta);
 }
 
+.kpi-card--clicavel {
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.1s;
+}
+
+.kpi-card--clicavel:hover {
+  border-color: var(--accent);
+}
+
+.kpi-card--clicavel:active {
+  transform: scale(0.98);
+}
+
+.kpi-card--ativo {
+  border-color: var(--accent);
+  background: #1f2530;
+}
+
 .kpi-card__titulo {
   font-size: 13px;
   color: var(--text-muted);
@@ -228,6 +289,10 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px;
+}
+
+.grid-principal > * {
+  min-width: 0;
 }
 
 @media (max-width: 900px) {
@@ -254,8 +319,43 @@ body {
   flex-shrink: 0;
 }
 
+.tabela-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  margin-bottom: 16px;
+}
+
+.tabela-card__header h3 {
+  margin: 0;
+}
+
+.botao-exportar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.botao-exportar:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .tabela-card__scroll {
   overflow-y: auto;
+  overflow-x: auto;
+}
+
+.tabela-card__scroll table {
+  min-width: 480px;
 }
 
 .chart-card h3,
@@ -268,6 +368,26 @@ table {
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
+}
+
+.th-ordenavel {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.th-ordenavel:hover {
+  color: var(--text);
+}
+
+.th-icone {
+  vertical-align: -2px;
+  color: var(--accent);
+}
+
+.th-icone--inativo {
+  color: var(--text-muted);
+  opacity: 0.5;
 }
 
 th {
