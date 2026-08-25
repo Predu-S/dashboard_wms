@@ -1,6 +1,9 @@
-import { Search, Bell, UserCircle } from 'lucide-react'
+import { Search, Bell, UserCircle, LogOut } from 'lucide-react'
+import { obterUsuario } from '../api'
 
-export default function Topbar() {
+export default function Topbar({ onLogout }) {
+  const usuario = obterUsuario() || 'Usuário'
+
   return (
     <header className="topbar">
       <div className="topbar__busca">
@@ -14,8 +17,11 @@ export default function Topbar() {
         </button>
         <div className="topbar__usuario">
           <UserCircle size={22} />
-          <span>Admin</span>
+          <span>{usuario}</span>
         </div>
+        <button className="topbar__icone-btn" title="Sair" onClick={onLogout}>
+          <LogOut size={18} />
+        </button>
       </div>
     </header>
   )

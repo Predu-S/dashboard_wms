@@ -1,6 +1,12 @@
 import { Filter } from 'lucide-react'
 
-export default function FiltroBarra({ depositos, depositoSelecionado, onSelecionarDeposito }) {
+export default function FiltroBarra({
+  depositos,
+  depositoSelecionado,
+  onSelecionarDeposito,
+  situacaoSelecionada,
+  onSelecionarSituacao,
+}) {
   return (
     <div className="filtro-barra">
       <div className="filtro-barra__item">
@@ -20,7 +26,11 @@ export default function FiltroBarra({ depositos, depositoSelecionado, onSelecion
 
       <div className="filtro-barra__item">
         <label htmlFor="filtro-criticidade">Situação</label>
-        <select id="filtro-criticidade" defaultValue="todas">
+        <select
+          id="filtro-criticidade"
+          value={situacaoSelecionada}
+          onChange={(e) => onSelecionarSituacao(e.target.value)}
+        >
           <option value="todas">Todas</option>
           <option value="critico">Críticos (≥ 90%)</option>
           <option value="normal">Normais</option>

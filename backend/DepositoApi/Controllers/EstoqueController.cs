@@ -1,10 +1,12 @@
 using DepositoApi.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DepositoApi.Controllers;
 
 [ApiController]
 [Route("api/estoque")]
+[Authorize]
 public class EstoqueController : ControllerBase
 {
     private readonly IOcupacaoService _ocupacaoService;

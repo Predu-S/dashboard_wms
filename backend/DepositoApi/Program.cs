@@ -1,4 +1,7 @@
+using System.Text;
 using DepositoApi.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,18 +11,44 @@ var usarDadosFicticios = builder.Configuration.GetValue<bool>("UsarDadosFicticio
 if (usarDadosFicticios)
 {
     builder.Services.AddSingleton<IOcupacaoService, OcupacaoServiceMock>();
+    builder.Services.AddSingleton<IPendenciaService, PendenciaServiceMock>();
 }
 else
 {
     builder.Services.AddScoped<IOcupacaoService, OcupacaoService>();
+    builder.Services.AddScoped<IPendenciaService, PendenciaService>();
 }
+
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// --- Autenticação JWT ---
+var chaveSecreta = builder.Configuration["Jwt:SecretKey"]
+    ?? throw new InvalidOperationException("Jwt:SecretKey não configurada.");
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(chaveSecreta)),
+        };
+    });
+
+builder.Services.AddAuthorization();
+
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
-    ?? new[] { "http://localhost:5000" };
+    ?? new[] { "http://localhost:5173" };
 
 builder.Services.AddCors(options =>
 {
@@ -40,6 +69,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors();
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 

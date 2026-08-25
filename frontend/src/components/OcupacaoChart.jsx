@@ -36,7 +36,7 @@ export default function OcupacaoChart({ dados }) {
             labelStyle={{ color: '#e6e9f0' }}
             formatter={(value) => [`${value}%`, 'Ocupação']}
           />
-          <Bar dataKey="ocupacao" fill="#00FFBB" radius={[6, 6, 0, 0]} />
+          <Bar dataKey="ocupacao" fill="#4f8cff" radius={[6, 6, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>
