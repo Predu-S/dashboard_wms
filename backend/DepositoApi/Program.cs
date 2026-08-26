@@ -12,11 +12,17 @@ if (usarDadosFicticios)
 {
     builder.Services.AddSingleton<IOcupacaoService, OcupacaoServiceMock>();
     builder.Services.AddSingleton<IPendenciaService, PendenciaServiceMock>();
+    builder.Services.AddSingleton<IVendaService, VendaServiceMock>();
+    builder.Services.AddSingleton<IFinanceiroService, FinanceiroServiceMock>();
+    builder.Services.AddSingleton<ICompraService, CompraServiceMock>();
 }
 else
 {
     builder.Services.AddScoped<IOcupacaoService, OcupacaoService>();
     builder.Services.AddScoped<IPendenciaService, PendenciaService>();
+    builder.Services.AddScoped<IVendaService, VendaService>();
+    builder.Services.AddScoped<IFinanceiroService, FinanceiroService>();
+    builder.Services.AddScoped<ICompraService, CompraService>();
 }
 
 builder.Services.AddScoped<IAuthService, AuthService>();

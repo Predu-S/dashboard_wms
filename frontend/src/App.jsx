@@ -3,8 +3,12 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { obterToken, limparToken } from './api'
 import LoginPage from './components/LoginPage'
 import Layout from './components/Layout'
+import VisaoGeralPage from './components/VisaoGeralPage'
 import DashboardPage from './components/DashboardPage'
 import PendenciasPage from './components/PendenciasPage'
+import VendasPage from './components/VendasPage'
+import FinanceiroPage from './components/FinanceiroPage'
+import ComprasPage from './components/ComprasPage'
 import EmBreve from './components/EmBreve'
 import './index.css'
 
@@ -32,9 +36,12 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Layout onLogout={handleLogout} />}>
-          <Route index element={<DashboardPage />} />
+          <Route index element={<VisaoGeralPage />} />
+          <Route path="estoque" element={<DashboardPage />} />
           <Route path="pendencias" element={<PendenciasPage />} />
-          <Route path="wms" element={<EmBreve titulo="WMS / Locação" />} />
+          <Route path="vendas" element={<VendasPage />} />
+          <Route path="financeiro" element={<FinanceiroPage />} />
+          <Route path="compras" element={<ComprasPage />} />
           <Route path="configuracoes" element={<EmBreve titulo="Configurações" />} />
         </Route>
       </Routes>

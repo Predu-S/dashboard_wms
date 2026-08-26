@@ -1,12 +1,15 @@
 import { useState } from 'react'
 import { Outlet, NavLink } from 'react-router-dom'
-import { LayoutDashboard, Package, Warehouse, Settings, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Home, LayoutDashboard, Package, ShoppingCart, Wallet, Truck, Settings, ChevronLeft, ChevronRight } from 'lucide-react'
 import Topbar from './Topbar'
 
 const ITENS_MENU = [
-  { rota: '/', rotulo: 'Dashboard', icone: LayoutDashboard, fim: true },
+  { rota: '/', rotulo: 'Visão Geral', icone: Home, fim: true },
+  { rota: '/estoque', rotulo: 'Estoque / Ocupação', icone: LayoutDashboard },
   { rota: '/pendencias', rotulo: 'Pendências', icone: Package },
-  { rota: '/wms', rotulo: 'WMS / Locação', icone: Warehouse },
+  { rota: '/vendas', rotulo: 'Vendas', icone: ShoppingCart },
+  { rota: '/financeiro', rotulo: 'Financeiro', icone: Wallet },
+  { rota: '/compras', rotulo: 'Compras / Fornecedores', icone: Truck },
   { rota: '/configuracoes', rotulo: 'Configurações', icone: Settings },
 ]
 

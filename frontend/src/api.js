@@ -67,4 +67,13 @@ export const api = {
   ocupacaoResumo: () => chamarApi('/api/estoque/ocupacao/resumo'),
   pendencias: () => chamarApi('/api/pendencias'),
   pendenciasResumo: () => chamarApi('/api/pendencias/resumo'),
+  vendas: () => chamarApi('/api/vendas'),
+  vendasResumo: () => chamarApi('/api/vendas/resumo'),
+  vendasPorVendedor: () => chamarApi('/api/vendas/por-vendedor'),
+  financeiroContasReceber: () => chamarApi('/api/financeiro/contas-receber'),
+  financeiroContasPagar: () => chamarApi('/api/financeiro/contas-pagar'),
+  financeiroResumo: () => chamarApi('/api/financeiro/resumo'),
+  compras: () => chamarApi('/api/compras'),
+  comprasResumo: () => chamarApi('/api/compras/resumo'),
+  comprasPorFornecedor: () => chamarApi('/api/compras/por-fornecedor'),
 }
