@@ -6,7 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 var builder = WebApplication.CreateBuilder(args);
 
 // Troque para false quando o Firebird real estiver configurado no appsettings.json
-var usarDadosFicticios = builder.Configuration.GetValue<bool>("UsarDadosFicticios", false);
+var usarDadosFicticios = builder.Configuration.GetValue<bool>("UsarDadosFicticios", true);
 
 if (usarDadosFicticios)
 {
