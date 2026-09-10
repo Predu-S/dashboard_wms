@@ -21,3 +21,10 @@ public class VendasPorVendedor
     public string Vendedor { get; set; } = string.Empty;
     public decimal TotalVendido { get; set; }
 }
+
+public class ProdutoMaisVendido
+{
+    public string Produto { get; set; } = string.Empty;
+    public decimal QuantidadeVendida { get; set; }
+    public decimal TotalVendido { get; set; }
+}

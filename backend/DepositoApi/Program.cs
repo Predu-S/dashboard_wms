@@ -6,7 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 var builder = WebApplication.CreateBuilder(args);
 
 // Troque para false quando o Firebird real estiver configurado no appsettings.json
-var usarDadosFicticios = builder.Configuration.GetValue<bool>("UsarDadosFicticios", true);
+var usarDadosFicticios = builder.Configuration.GetValue<bool>("UsarDadosFicticios", false);
 
 if (usarDadosFicticios)
 {
@@ -15,6 +15,8 @@ if (usarDadosFicticios)
     builder.Services.AddSingleton<IVendaService, VendaServiceMock>();
     builder.Services.AddSingleton<IFinanceiroService, FinanceiroServiceMock>();
     builder.Services.AddSingleton<ICompraService, CompraServiceMock>();
+    builder.Services.AddSingleton<IFiscalService, FiscalServiceMock>();
+    builder.Services.AddSingleton<IProdutoService, ProdutoServiceMock>();
 }
 else
 {
@@ -23,9 +25,14 @@ else
     builder.Services.AddScoped<IVendaService, VendaService>();
     builder.Services.AddScoped<IFinanceiroService, FinanceiroService>();
     builder.Services.AddScoped<ICompraService, CompraService>();
+    builder.Services.AddScoped<IFiscalService, FiscalService>();
+    builder.Services.AddScoped<IProdutoService, ProdutoService>();
 }
 
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton<ITenantService, TenantService>();
+builder.Services.AddScoped<ITenantContext, TenantContext>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

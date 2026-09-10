@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { api } from '../api'
 import KpiCard from './KpiCard'
+import TabelaDados from './TabelaDados'
 
 const ROTULOS_TIPO = {
   ENTRADA: 'Entradas',
@@ -8,6 +9,13 @@ const ROTULOS_TIPO = {
   TRANSF_DESTINO: 'Transf. Destino',
   TRANSF_ORIGEM: 'Transf. Origem',
 }
+
+const COLUNAS = [
+  { chave: 'endereco', rotulo: 'Endereço' },
+  { chave: 'deposito', rotulo: 'Depósito' },
+  { chave: 'tipo', rotulo: 'Tipo', render: (item) => ROTULOS_TIPO[item.tipo] || item.tipo, valorCsv: (item) => ROTULOS_TIPO[item.tipo] || item.tipo },
+  { chave: 'quantidade', rotulo: 'Quantidade' },
+]
 
 export default function PendenciasPage() {
   const [pendencias, setPendencias] = useState([])
@@ -59,38 +67,13 @@ export default function PendenciasPage() {
             ))}
           </section>
 
-          <section className="tabela-card" style={{ maxHeight: 480 }}>
-            <div className="tabela-card__header">
-              <h3>Detalhamento das Pendências</h3>
-            </div>
-            <div className="tabela-card__scroll">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Endereço</th>
-                    <th>Depósito</th>
-                    <th>Tipo</th>
-                    <th>Quantidade</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pendenciasFiltradas.map((p, i) => (
-                    <tr key={i}>
-                      <td>{p.endereco}</td>
-                      <td>{p.deposito}</td>
-                      <td>{ROTULOS_TIPO[p.tipo] || p.tipo}</td>
-                      <td>{p.quantidade}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {pendenciasFiltradas.length === 0 && (
-                <p style={{ color: 'var(--text-muted)', padding: '12px 0' }}>
-                  Nenhuma pendência encontrada para esse filtro.
-                </p>
-              )}
-            </div>
-          </section>
+          <TabelaDados
+            titulo="Detalhamento das Pendências"
+            colunas={COLUNAS}
+            dados={pendenciasFiltradas}
+            nomeArquivoCsv="pendencias"
+            mensagemVazia="Nenhuma pendência encontrada para esse filtro."
+          />
         </>
       )}
     </>

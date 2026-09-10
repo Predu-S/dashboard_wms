@@ -13,12 +13,10 @@ public interface IAuthService
 }
 
 /// <summary>
-/// Implementação inicial com usuário fixo vindo do appsettings.json
-/// (seção "UsuarioDemo", com a senha já em hash bcrypt). Quando você tiver
-/// uma tabela de usuários no Firebird (ou um banco central de
-/// clientes/usuários, pensando em multi-tenant), troque a validação abaixo
-/// por uma consulta real, mas mantendo a comparação por hash — nunca
-/// guarde senha em texto puro em lugar nenhum.
+/// Autentica contra o cadastro de tenants (ITenantService) — cada tenant
+/// tem seu próprio usuário/senha (hash bcrypt) e Firebird. Ao logar com
+/// sucesso, o token JWT carrega um claim "tenantId", que o TenantContext
+/// usa depois para saber qual Firebird cada requisição deve consultar.
 ///
 /// Também aplica um limite simples de tentativas de login por IP, para
 /// dificultar ataques de força bruta.
@@ -26,19 +24,21 @@ public interface IAuthService
 public class AuthService : IAuthService
 {
     private readonly IConfiguration _configuration;
+    private readonly ITenantService _tenantService;
 
     // Controle de tentativas em memória: chave = IP, valor = (tentativas, bloqueadoAte)
     // Para múltiplas instâncias/produção em maior escala, isso deveria virar
-    // um cache distribuído (Redis), mas para o volume de uma API interna
-    // como esta, em memória já resolve bem.
+    // um cache distribuído (Redis), mas para o volume esperado aqui, em
+    // memória já resolve bem.
     private static readonly ConcurrentDictionary<string, (int Tentativas, DateTime? BloqueadoAte)> _tentativas = new();
 
     private const int MaxTentativas = 5;
     private static readonly TimeSpan TempoBloqueio = TimeSpan.FromMinutes(5);
 
-    public AuthService(IConfiguration configuration)
+    public AuthService(IConfiguration configuration, ITenantService tenantService)
     {
         _configuration = configuration;
+        _tenantService = tenantService;
     }
 
     public LoginResponse? Autenticar(LoginRequest request, string ipOrigem)
@@ -46,18 +46,17 @@ public class AuthService : IAuthService
         if (EstaBloqueado(ipOrigem))
         {
             throw new InvalidOperationException(
-                $"Muitas tentativas de login. Tente novamente em alguns minutos.");
+                "Muitas tentativas de login. Tente novamente em alguns minutos.");
         }
 
-        var usuarioEsperado = _configuration["UsuarioDemo:Usuario"];
-        var senhaHashEsperado = _configuration["UsuarioDemo:SenhaHash"];
+        var tenant = _tenantService.ObterPorUsuario(request.Usuario);
 
         var credenciaisValidas =
-            request.Usuario == usuarioEsperado &&
-            !string.IsNullOrEmpty(senhaHashEsperado) &&
-            BCrypt.Net.BCrypt.Verify(request.Senha, senhaHashEsperado);
+            tenant is not null &&
+            !string.IsNullOrEmpty(tenant.SenhaHash) &&
+            BCrypt.Net.BCrypt.Verify(request.Senha, tenant.SenhaHash);
 
-        if (!credenciaisValidas)
+        if (!credenciaisValidas || tenant is null)
         {
             RegistrarTentativaFalha(ipOrigem);
             return null;
@@ -66,7 +65,7 @@ public class AuthService : IAuthService
         // Login OK: zera o contador de tentativas desse IP
         _tentativas.TryRemove(ipOrigem, out _);
 
-        return GerarToken(request.Usuario);
+        return GerarToken(tenant);
     }
 
     private bool EstaBloqueado(string ip)
@@ -96,7 +95,7 @@ public class AuthService : IAuthService
             });
     }
 
-    private LoginResponse GerarToken(string usuario)
+    private LoginResponse GerarToken(Tenant tenant)
     {
         var chaveSecreta = _configuration["Jwt:SecretKey"]
             ?? throw new InvalidOperationException("Jwt:SecretKey não configurada.");
@@ -108,9 +107,8 @@ public class AuthService : IAuthService
 
         var claims = new[]
         {
-            new Claim(ClaimTypes.Name, usuario),
-            // TODO: quando existir multi-tenant, adicionar aqui um claim
-            // com o ID do cliente, ex: new Claim("clienteId", clienteId.ToString())
+            new Claim(ClaimTypes.Name, tenant.Usuario),
+            new Claim("tenantId", tenant.Id),
         };
 
         var credenciais = new SigningCredentials(
@@ -127,7 +125,7 @@ public class AuthService : IAuthService
         return new LoginResponse
         {
             Token = new JwtSecurityTokenHandler().WriteToken(token),
-            Usuario = usuario,
+            Usuario = tenant.Usuario,
             ExpiraEm = expiraEm,
         };
     }

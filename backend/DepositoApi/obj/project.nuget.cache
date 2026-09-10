@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "mAD7sjInwac=",
+  "dgSpecHash": "GNjNdMIjE1M=",
   "success": true,
-  "projectFilePath": "D:\\projeto_dashboard\\dashboard-deposito\\backend\\depositoapi\\DepositoApi.csproj",
+  "projectFilePath": "D:\\projeto_dashboard\\dashboard-deposito\\backend\\DepositoApi\\DepositoApi.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Pedro\\.nuget\\packages\\bcrypt.net-next\\4.0.3\\bcrypt.net-next.4.0.3.nupkg.sha512",
     "C:\\Users\\Pedro\\.nuget\\packages\\dapper\\2.1.35\\dapper.2.1.35.nupkg.sha512",

@@ -14,29 +14,29 @@ function formatarData(data) {
 }
 
 const COLUNAS = [
-  { chave: 'numNota', rotulo: 'Nota', render: (n) => `${n.numNota}/${n.serie}`, valorCsv: (n) => `${n.numNota}/${n.serie}` },
-  { chave: 'fornecedor', rotulo: 'Fornecedor' },
-  { chave: 'dataEmissao', rotulo: 'Emissão', render: (n) => formatarData(n.dataEmissao), valorCsv: (n) => formatarData(n.dataEmissao) },
-  { chave: 'dataEntradaLoja', rotulo: 'Entrada', render: (n) => formatarData(n.dataEntradaLoja), valorCsv: (n) => formatarData(n.dataEntradaLoja) },
-  { chave: 'volumes', rotulo: 'Volumes' },
+  { chave: 'codigo', rotulo: 'Nota', render: (n) => `${n.codigo}/${n.serie}`, valorCsv: (n) => `${n.codigo}/${n.serie}` },
+  { chave: 'cfop', rotulo: 'CFOP' },
+  { chave: 'cliente', rotulo: 'Cliente' },
+  { chave: 'vendedor', rotulo: 'Vendedor' },
+  { chave: 'dtSaida', rotulo: 'Saída', render: (n) => formatarData(n.dtSaida), valorCsv: (n) => formatarData(n.dtSaida) },
   { chave: 'valorTotalNota', rotulo: 'Valor', render: (n) => formatarMoeda(n.valorTotalNota), valorCsv: (n) => n.valorTotalNota },
 ]
 
-export default function ComprasPage() {
+export default function FiscalPage() {
   const { periodo } = usePeriodo()
   const [notas, setNotas] = useState([])
   const [resumo, setResumo] = useState(null)
-  const [porFornecedor, setPorFornecedor] = useState([])
+  const [porCfop, setPorCfop] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState(null)
 
   useEffect(() => {
     setCarregando(true)
-    Promise.all([api.compras(periodo), api.comprasResumo(periodo), api.comprasPorFornecedor(periodo)])
-      .then(([notasResp, resumoResp, fornecedorResp]) => {
+    Promise.all([api.fiscalNotas(periodo), api.fiscalResumo(periodo), api.fiscalPorCfop(periodo)])
+      .then(([notasResp, resumoResp, cfopResp]) => {
         setNotas(notasResp)
         setResumo(resumoResp)
-        setPorFornecedor(fornecedorResp)
+        setPorCfop(cfopResp)
       })
       .catch((e) => setErro(e.message))
       .finally(() => setCarregando(false))
@@ -45,8 +45,8 @@ export default function ComprasPage() {
   return (
     <>
       <header className="conteudo__header">
-        <h1>Compras / Fornecedores</h1>
-        <span className="conteudo__data">Notas fiscais de entrada não canceladas</span>
+        <h1>Fiscal</h1>
+        <span className="conteudo__data">Notas fiscais de saída não canceladas</span>
       </header>
 
       {carregando && <p>Carregando dados...</p>}
@@ -55,34 +55,34 @@ export default function ComprasPage() {
       {!carregando && !erro && resumo && (
         <>
           <section className="kpis">
-            <KpiCard titulo="Total Comprado" valor={formatarMoeda(resumo.totalComprado)} />
-            <KpiCard titulo="Notas de Entrada" valor={resumo.quantidadeNotas} />
+            <KpiCard titulo="Total Faturado" valor={formatarMoeda(resumo.totalFaturado)} />
+            <KpiCard titulo="Notas Emitidas" valor={resumo.quantidadeNotas} />
             <KpiCard titulo="Valor Médio por Nota" valor={formatarMoeda(resumo.valorMedioPorNota)} />
           </section>
 
           <section className="chart-card">
-            <h3>Compras por Fornecedor</h3>
+            <h3>Notas por CFOP</h3>
             <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={porFornecedor} margin={{ top: 5, right: 10, left: 0, bottom: 20 }}>
+              <BarChart data={porCfop} margin={{ top: 5, right: 10, left: 0, bottom: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#2a2f3a" />
-                <XAxis dataKey="fornecedor" stroke="#8b93a7" interval={0} tick={{ fontSize: 12 }} angle={-30} textAnchor="end" height={50} />
+                <XAxis dataKey="cfop" stroke="#8b93a7" interval={0} tick={{ fontSize: 12 }} />
                 <YAxis stroke="#8b93a7" />
                 <Tooltip
                   cursor={{ fill: 'rgba(255, 255, 255, 0.08)' }}
                   contentStyle={{ background: '#1b1f27', border: '1px solid #2a2f3a', borderRadius: 8 }}
                   labelStyle={{ color: '#e6e9f0' }}
-                  formatter={(value) => [formatarMoeda(value), 'Total']}
+                  formatter={(value, nome) => [nome === 'total' ? formatarMoeda(value) : value, nome === 'total' ? 'Total' : 'Notas']}
                 />
-                <Bar dataKey="totalComprado" fill="#f5a623" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="total" fill="#a970ff" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </section>
 
           <TabelaDados
-            titulo="Notas de Entrada"
+            titulo="Notas Fiscais"
             colunas={COLUNAS}
             dados={notas}
-            nomeArquivoCsv="compras-notas"
+            nomeArquivoCsv="fiscal-notas"
             mensagemVazia="Nenhuma nota no período."
           />
         </>

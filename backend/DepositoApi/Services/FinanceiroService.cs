@@ -6,32 +6,49 @@ namespace DepositoApi.Services;
 
 public interface IFinanceiroService
 {
-    Task<IEnumerable<ContaReceber>> ObterContasReceberAsync();
-    Task<IEnumerable<ContaPagar>> ObterContasPagarAsync();
+    Task<IEnumerable<ContaReceber>> ObterContasReceberAsync(DateTime? dataInicio, DateTime? dataFim);
+    Task<IEnumerable<ContaPagar>> ObterContasPagarAsync(DateTime? dataInicio, DateTime? dataFim);
     Task<ResumoFinanceiro> ObterResumoAsync();
 }
 
 /// <summary>
 /// Consulta BCOCTAR (contas a receber) e BCOCTAP (contas a pagar),
-/// considerando apenas títulos não cancelados (CAN = 0). "Vencido" é
-/// calculado no C#/SQL comparando a data de vencimento com hoje, para
-/// títulos ainda não pagos.
+/// considerando apenas títulos não cancelados (CAN = 0). O filtro de data
+/// (quando informado) é aplicado sobre a data de emissão do título.
 /// </summary>
 public class FinanceiroService : IFinanceiroService
 {
-    private readonly string _connectionString;
+    private readonly ITenantContext _tenantContext;
 
-    public FinanceiroService(IConfiguration configuration)
+    public FinanceiroService(ITenantContext tenantContext)
     {
-        _connectionString = configuration.GetConnectionString("FirebirdDefault")
-            ?? throw new InvalidOperationException("Connection string 'FirebirdDefault' não configurada.");
+        _tenantContext = tenantContext;
     }
 
-    private FbConnection CriarConexao() => new FbConnection(_connectionString);
+    private FbConnection CriarConexao() => new FbConnection(_tenantContext.ConnectionString);
 
-    public async Task<IEnumerable<ContaReceber>> ObterContasReceberAsync()
+    private static string AplicarFiltroData(DynamicParameters parametros, string coluna, DateTime? dataInicio, DateTime? dataFim)
     {
-        const string sql = @"
+        var filtro = "";
+        if (dataInicio.HasValue)
+        {
+            filtro += $" AND {coluna} >= @dataInicio";
+            parametros.Add("dataInicio", dataInicio.Value.Date);
+        }
+        if (dataFim.HasValue)
+        {
+            filtro += $" AND {coluna} < @dataFim";
+            parametros.Add("dataFim", dataFim.Value.Date.AddDays(1));
+        }
+        return filtro;
+    }
+
+    public async Task<IEnumerable<ContaReceber>> ObterContasReceberAsync(DateTime? dataInicio, DateTime? dataFim)
+    {
+        var parametros = new DynamicParameters();
+        var filtroData = AplicarFiltroData(parametros, "CT.DTEMISSAO", dataInicio, dataFim);
+
+        var sql = $@"
             SELECT
                 C.RAZAO       AS Cliente,
                 CT.NUMTIT     AS NumTit,
@@ -44,16 +61,19 @@ public class FinanceiroService : IFinanceiroService
                 CT.DESCONTO   AS Desconto
             FROM BCOCTAR CT
             JOIN BCOCLI C ON C.CODIGO = CT.CL
-            WHERE CT.CAN = 0
+            WHERE CT.CAN = 0{filtroData}
             ORDER BY CT.DTVENCTO";
 
         using var conexao = CriarConexao();
-        return await conexao.QueryAsync<ContaReceber>(sql);
+        return await conexao.QueryAsync<ContaReceber>(sql, parametros);
     }
 
-    public async Task<IEnumerable<ContaPagar>> ObterContasPagarAsync()
+    public async Task<IEnumerable<ContaPagar>> ObterContasPagarAsync(DateTime? dataInicio, DateTime? dataFim)
     {
-        const string sql = @"
+        var parametros = new DynamicParameters();
+        var filtroData = AplicarFiltroData(parametros, "CP.DTEMISSAO", dataInicio, dataFim);
+
+        var sql = $@"
             SELECT
                 F.RAZAO       AS Fornecedor,
                 CP.NUMTIT     AS NumTit,
@@ -66,34 +86,46 @@ public class FinanceiroService : IFinanceiroService
                 CP.DESCONTO   AS Desconto
             FROM BCOCTAP CP
             JOIN BCOFOR F ON F.CODIGO = CP.CODFORN
-            WHERE CP.CAN = 0
+            WHERE CP.CAN = 0{filtroData}
             ORDER BY CP.DTVENC";
 
         using var conexao = CriarConexao();
-        return await conexao.QueryAsync<ContaPagar>(sql);
+        return await conexao.QueryAsync<ContaPagar>(sql, parametros);
+    }
+
+    private class TotaisReceber
+    {
+        public decimal TotalReceber { get; set; }
+        public decimal TotalReceberVencido { get; set; }
+    }
+
+    private class TotaisPagar
+    {
+        public decimal TotalPagar { get; set; }
+        public decimal TotalPagarVencido { get; set; }
     }
 
     public async Task<ResumoFinanceiro> ObterResumoAsync()
     {
         const string sqlReceber = @"
             SELECT
-                COALESCE(SUM(CT.VALOR - CT.VALORPG), 0) AS TotalReceber,
+                COALESCE(SUM(CT.VALOR - COALESCE(CT.VALORPG, 0)), 0) AS TotalReceber,
                 COALESCE(SUM(CASE WHEN CT.DTPAGTO IS NULL AND CT.DTVENCTO < CURRENT_DATE
-                                  THEN CT.VALOR - CT.VALORPG ELSE 0 END), 0) AS TotalReceberVencido
+                                  THEN CT.VALOR - COALESCE(CT.VALORPG, 0) ELSE 0 END), 0) AS TotalReceberVencido
             FROM BCOCTAR CT
             WHERE CT.CAN = 0 AND CT.DTPAGTO IS NULL";
 
         const string sqlPagar = @"
             SELECT
-                COALESCE(SUM(CP.VRAPAGAR - CP.VRPAGO), 0) AS TotalPagar,
+                COALESCE(SUM(CP.VRAPAGAR - COALESCE(CP.VRPAGO, 0)), 0) AS TotalPagar,
                 COALESCE(SUM(CASE WHEN CP.DTPAG IS NULL AND CP.DTVENC < CURRENT_DATE
-                                  THEN CP.VRAPAGAR - CP.VRPAGO ELSE 0 END), 0) AS TotalPagarVencido
+                                  THEN CP.VRAPAGAR - COALESCE(CP.VRPAGO, 0) ELSE 0 END), 0) AS TotalPagarVencido
             FROM BCOCTAP CP
             WHERE CP.CAN = 0 AND CP.DTPAG IS NULL";
 
         using var conexao = CriarConexao();
-        var receber = await conexao.QuerySingleAsync<(decimal TotalReceber, decimal TotalReceberVencido)>(sqlReceber);
-        var pagar = await conexao.QuerySingleAsync<(decimal TotalPagar, decimal TotalPagarVencido)>(sqlPagar);
+        var receber = await conexao.QuerySingleAsync<TotaisReceber>(sqlReceber);
+        var pagar = await conexao.QuerySingleAsync<TotaisPagar>(sqlPagar);
 
         return new ResumoFinanceiro
         {
@@ -121,8 +153,14 @@ public class FinanceiroServiceMock : IFinanceiroService
         new() { Fornecedor = "Indústria XYZ", NumTit = "P-002", DtEmissao = DateTime.Today.AddDays(-35), DtVenc = DateTime.Today.AddDays(-5), VrAPagar = 6100m, VrPago = 0, Juros = 0, Desconto = 0 },
     };
 
-    public Task<IEnumerable<ContaReceber>> ObterContasReceberAsync() => Task.FromResult<IEnumerable<ContaReceber>>(_receber);
-    public Task<IEnumerable<ContaPagar>> ObterContasPagarAsync() => Task.FromResult<IEnumerable<ContaPagar>>(_pagar);
+    private static bool DentroDoPeriodo(DateTime data, DateTime? inicio, DateTime? fim) =>
+        (!inicio.HasValue || data.Date >= inicio.Value.Date) && (!fim.HasValue || data.Date <= fim.Value.Date);
+
+    public Task<IEnumerable<ContaReceber>> ObterContasReceberAsync(DateTime? dataInicio, DateTime? dataFim) =>
+        Task.FromResult<IEnumerable<ContaReceber>>(_receber.Where(r => DentroDoPeriodo(r.DtEmissao, dataInicio, dataFim)));
+
+    public Task<IEnumerable<ContaPagar>> ObterContasPagarAsync(DateTime? dataInicio, DateTime? dataFim) =>
+        Task.FromResult<IEnumerable<ContaPagar>>(_pagar.Where(p => DentroDoPeriodo(p.DtEmissao, dataInicio, dataFim)));
 
     public Task<ResumoFinanceiro> ObterResumoAsync()
     {

@@ -5,7 +5,7 @@ import OcupacaoChart from './OcupacaoChart'
 import OcupacaoTabela from './OcupacaoTabela'
 import FiltroBarra from './FiltroBarra'
 
-export default function DashboardPage() {
+export default function OcupacaoPage() {
   const [resumo, setResumo] = useState([])
   const [detalhado, setDetalhado] = useState([])
   const [carregando, setCarregando] = useState(true)
@@ -57,7 +57,7 @@ export default function DashboardPage() {
   return (
     <>
       <header className="conteudo__header">
-        <h1>{titulo || "Ocupação"}</h1>
+        <h1>Dashboard de Ocupação — Armazém</h1>
         <span className="conteudo__data">
           {depositoSelecionado === 'todos' ? 'Consolidado • Todos os Depósitos' : `Depósito ${depositoSelecionado}`}
         </span>

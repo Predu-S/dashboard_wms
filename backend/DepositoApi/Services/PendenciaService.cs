@@ -21,15 +21,14 @@ public interface IPendenciaService
 /// </summary>
 public class PendenciaService : IPendenciaService
 {
-    private readonly string _connectionString;
+    private readonly ITenantContext _tenantContext;
 
-    public PendenciaService(IConfiguration configuration)
+    public PendenciaService(ITenantContext tenantContext)
     {
-        _connectionString = configuration.GetConnectionString("FirebirdDefault")
-            ?? throw new InvalidOperationException("Connection string 'FirebirdDefault' não configurada.");
+        _tenantContext = tenantContext;
     }
 
-    private FbConnection CriarConexao() => new FbConnection(_connectionString);
+    private FbConnection CriarConexao() => new FbConnection(_tenantContext.ConnectionString);
 
     public async Task<IEnumerable<Pendencia>> ObterPendenciasAsync()
     {

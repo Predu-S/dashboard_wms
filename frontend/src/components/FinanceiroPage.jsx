@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { api } from '../api'
 import KpiCard from './KpiCard'
+import TabelaDados from './TabelaDados'
+import { usePeriodo } from '../context/PeriodoContext'
 
 function formatarMoeda(valor) {
   return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -10,7 +12,22 @@ function formatarData(data) {
   return data ? new Date(data).toLocaleDateString('pt-BR') : '—'
 }
 
+function StatusPill({ pago, vencido }) {
+  return (
+    <span
+      className="status-pill"
+      style={{
+        color: pago ? '#3ecf8e' : vencido ? '#ff5c5c' : '#8b93a7',
+        borderColor: pago ? '#3ecf8e' : vencido ? '#ff5c5c' : '#2a2f3a',
+      }}
+    >
+      {pago ? 'Pago' : vencido ? 'Vencido' : 'Em aberto'}
+    </span>
+  )
+}
+
 export default function FinanceiroPage() {
+  const { periodo } = usePeriodo()
   const [aba, setAba] = useState('receber')
   const [resumo, setResumo] = useState(null)
   const [contasReceber, setContasReceber] = useState([])
@@ -19,7 +36,12 @@ export default function FinanceiroPage() {
   const [erro, setErro] = useState(null)
 
   useEffect(() => {
-    Promise.all([api.financeiroResumo(), api.financeiroContasReceber(), api.financeiroContasPagar()])
+    setCarregando(true)
+    Promise.all([
+      api.financeiroResumo(),
+      api.financeiroContasReceber(periodo),
+      api.financeiroContasPagar(periodo),
+    ])
       .then(([resumoResp, receberResp, pagarResp]) => {
         setResumo(resumoResp)
         setContasReceber(receberResp)
@@ -27,9 +49,46 @@ export default function FinanceiroPage() {
       })
       .catch((e) => setErro(e.message))
       .finally(() => setCarregando(false))
-  }, [])
+  }, [periodo.dataInicio, periodo.dataFim])
 
-  const contas = aba === 'receber' ? contasReceber : contasPagar
+  // Normaliza os dois formatos (receber/pagar) em um só, pra alimentar a tabela genérica
+  const contasNormalizadas = useMemo(() => {
+    const origem = aba === 'receber' ? contasReceber : contasPagar
+    return origem.map((c) => {
+      const vencimento = aba === 'receber' ? c.dtVencto : c.dtVenc
+      const pagamento = aba === 'receber' ? c.dtPagto : c.dtPag
+      const pago = !!pagamento
+      const vencido = !pago && new Date(vencimento) < new Date().setHours(0, 0, 0, 0)
+      return {
+        nome: aba === 'receber' ? c.cliente : c.fornecedor,
+        numTit: c.numTit,
+        dtEmissao: c.dtEmissao,
+        vencimento,
+        pagamento,
+        valor: aba === 'receber' ? c.valor : c.vrAPagar,
+        pago,
+        vencido,
+      }
+    })
+  }, [aba, contasReceber, contasPagar])
+
+  const colunas = useMemo(
+    () => [
+      { chave: 'nome', rotulo: aba === 'receber' ? 'Cliente' : 'Fornecedor' },
+      { chave: 'numTit', rotulo: 'Título' },
+      { chave: 'dtEmissao', rotulo: 'Emissão', render: (i) => formatarData(i.dtEmissao), valorCsv: (i) => formatarData(i.dtEmissao) },
+      { chave: 'vencimento', rotulo: 'Vencimento', render: (i) => formatarData(i.vencimento), valorCsv: (i) => formatarData(i.vencimento) },
+      { chave: 'pagamento', rotulo: 'Pagamento', render: (i) => formatarData(i.pagamento), valorCsv: (i) => formatarData(i.pagamento) },
+      { chave: 'valor', rotulo: 'Valor', render: (i) => formatarMoeda(i.valor), valorCsv: (i) => i.valor },
+      {
+        chave: 'pago',
+        rotulo: 'Status',
+        render: (i) => <StatusPill pago={i.pago} vencido={i.vencido} />,
+        valorCsv: (i) => (i.pago ? 'Pago' : i.vencido ? 'Vencido' : 'Em aberto'),
+      },
+    ],
+    [aba]
+  )
 
   return (
     <>
@@ -67,58 +126,13 @@ export default function FinanceiroPage() {
             </button>
           </div>
 
-          <section className="tabela-card" style={{ maxHeight: 460 }}>
-            <div className="tabela-card__header">
-              <h3>{aba === 'receber' ? 'Títulos a Receber' : 'Títulos a Pagar'}</h3>
-            </div>
-            <div className="tabela-card__scroll">
-              <table>
-                <thead>
-                  <tr>
-                    <th>{aba === 'receber' ? 'Cliente' : 'Fornecedor'}</th>
-                    <th>Título</th>
-                    <th>Emissão</th>
-                    <th>Vencimento</th>
-                    <th>Pagamento</th>
-                    <th>Valor</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {contas.map((c, i) => {
-                    const nome = aba === 'receber' ? c.cliente : c.fornecedor
-                    const vencimento = aba === 'receber' ? c.dtVencto : c.dtVenc
-                    const pagamento = aba === 'receber' ? c.dtPagto : c.dtPag
-                    const valor = aba === 'receber' ? c.valor : c.vrAPagar
-                    const pago = !!pagamento
-                    const vencido = !pago && new Date(vencimento) < new Date().setHours(0, 0, 0, 0)
-
-                    return (
-                      <tr key={i}>
-                        <td>{nome}</td>
-                        <td>{c.numTit}</td>
-                        <td>{formatarData(c.dtEmissao)}</td>
-                        <td>{formatarData(vencimento)}</td>
-                        <td>{formatarData(pagamento)}</td>
-                        <td>{formatarMoeda(valor)}</td>
-                        <td>
-                          <span
-                            className="status-pill"
-                            style={{
-                              color: pago ? '#3ecf8e' : vencido ? '#ff5c5c' : '#8b93a7',
-                              borderColor: pago ? '#3ecf8e' : vencido ? '#ff5c5c' : '#2a2f3a',
-                            }}
-                          >
-                            {pago ? 'Pago' : vencido ? 'Vencido' : 'Em aberto'}
-                          </span>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </section>
+          <TabelaDados
+            titulo={aba === 'receber' ? 'Títulos a Receber' : 'Títulos a Pagar'}
+            colunas={colunas}
+            dados={contasNormalizadas}
+            nomeArquivoCsv={aba === 'receber' ? 'contas-a-receber' : 'contas-a-pagar'}
+            mensagemVazia="Nenhum título no período."
+          />
         </>
       )}
     </>

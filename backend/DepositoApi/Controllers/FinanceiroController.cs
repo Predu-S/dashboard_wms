@@ -17,16 +17,16 @@ public class FinanceiroController : ControllerBase
     }
 
     [HttpGet("contas-receber")]
-    public async Task<IActionResult> ObterContasReceber()
+    public async Task<IActionResult> ObterContasReceber([FromQuery] DateTime? dataInicio, [FromQuery] DateTime? dataFim)
     {
-        var dados = await _financeiroService.ObterContasReceberAsync();
+        var dados = await _financeiroService.ObterContasReceberAsync(dataInicio, dataFim);
         return Ok(dados);
     }
 
     [HttpGet("contas-pagar")]
-    public async Task<IActionResult> ObterContasPagar()
+    public async Task<IActionResult> ObterContasPagar([FromQuery] DateTime? dataInicio, [FromQuery] DateTime? dataFim)
     {
-        var dados = await _financeiroService.ObterContasPagarAsync();
+        var dados = await _financeiroService.ObterContasPagarAsync(dataInicio, dataFim);
         return Ok(dados);
     }
 

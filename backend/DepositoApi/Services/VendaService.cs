@@ -6,9 +6,10 @@ namespace DepositoApi.Services;
 
 public interface IVendaService
 {
-    Task<IEnumerable<Venda>> ObterVendasAsync();
-    Task<ResumoVendas> ObterResumoAsync();
-    Task<IEnumerable<VendasPorVendedor>> ObterPorVendedorAsync();
+    Task<IEnumerable<Venda>> ObterVendasAsync(DateTime? dataInicio, DateTime? dataFim);
+    Task<ResumoVendas> ObterResumoAsync(DateTime? dataInicio, DateTime? dataFim);
+    Task<IEnumerable<VendasPorVendedor>> ObterPorVendedorAsync(DateTime? dataInicio, DateTime? dataFim);
+    Task<IEnumerable<ProdutoMaisVendido>> ObterProdutosMaisVendidosAsync(DateTime? dataInicio, DateTime? dataFim, int limite = 10);
 }
 
 /// <summary>
@@ -21,15 +22,14 @@ public interface IVendaService
 /// </summary>
 public class VendaService : IVendaService
 {
-    private readonly string _connectionString;
+    private readonly ITenantContext _tenantContext;
 
-    public VendaService(IConfiguration configuration)
+    public VendaService(ITenantContext tenantContext)
     {
-        _connectionString = configuration.GetConnectionString("FirebirdDefault")
-            ?? throw new InvalidOperationException("Connection string 'FirebirdDefault' não configurada.");
+        _tenantContext = tenantContext;
     }
 
-    private FbConnection CriarConexao() => new FbConnection(_connectionString);
+    private FbConnection CriarConexao() => new FbConnection(_tenantContext.ConnectionString);
 
     private const string BaseFrom = @"
         FROM BCOSAI S
@@ -37,8 +37,27 @@ public class VendaService : IVendaService
         JOIN BCOVEN V ON V.CODIGO = S.CODVE
         WHERE S.CANCELADO = 0";
 
-    public async Task<IEnumerable<Venda>> ObterVendasAsync()
+    private static string AplicarFiltroData(DynamicParameters parametros, DateTime? dataInicio, DateTime? dataFim)
     {
+        var filtro = "";
+        if (dataInicio.HasValue)
+        {
+            filtro += " AND S.DATA >= @dataInicio";
+            parametros.Add("dataInicio", dataInicio.Value.Date);
+        }
+        if (dataFim.HasValue)
+        {
+            filtro += " AND S.DATA < @dataFim";
+            parametros.Add("dataFim", dataFim.Value.Date.AddDays(1));
+        }
+        return filtro;
+    }
+
+    public async Task<IEnumerable<Venda>> ObterVendasAsync(DateTime? dataInicio, DateTime? dataFim)
+    {
+        var parametros = new DynamicParameters();
+        var filtroData = AplicarFiltroData(parametros, dataInicio, dataFim);
+
         var sql = $@"
             SELECT
                 C.RAZAO     AS Cliente,
@@ -46,38 +65,76 @@ public class VendaService : IVendaService
                 S.VALOR     AS Valor,
                 S.DATA      AS Data,
                 S.NUMPEDIDO AS NumPedido
-            {BaseFrom}
+            {BaseFrom}{filtroData}
             ORDER BY S.DATA DESC";
 
         using var conexao = CriarConexao();
-        return await conexao.QueryAsync<Venda>(sql);
+        return await conexao.QueryAsync<Venda>(sql, parametros);
     }
 
-    public async Task<ResumoVendas> ObterResumoAsync()
+    public async Task<ResumoVendas> ObterResumoAsync(DateTime? dataInicio, DateTime? dataFim)
     {
+        var parametros = new DynamicParameters();
+        var filtroData = AplicarFiltroData(parametros, dataInicio, dataFim);
+
         var sql = $@"
             SELECT
                 COALESCE(SUM(S.VALOR), 0)                              AS TotalVendido,
                 COUNT(*)                                               AS QuantidadePedidos,
                 CASE WHEN COUNT(*) = 0 THEN 0 ELSE SUM(S.VALOR) / COUNT(*) END AS TicketMedio
-            {BaseFrom}";
+            {BaseFrom}{filtroData}";
 
         using var conexao = CriarConexao();
-        return await conexao.QuerySingleAsync<ResumoVendas>(sql);
+        return await conexao.QuerySingleAsync<ResumoVendas>(sql, parametros);
     }
 
-    public async Task<IEnumerable<VendasPorVendedor>> ObterPorVendedorAsync()
+    public async Task<IEnumerable<VendasPorVendedor>> ObterPorVendedorAsync(DateTime? dataInicio, DateTime? dataFim)
     {
+        var parametros = new DynamicParameters();
+        var filtroData = AplicarFiltroData(parametros, dataInicio, dataFim);
+
         var sql = $@"
             SELECT
                 V.NOME AS Vendedor,
                 SUM(S.VALOR) AS TotalVendido
-            {BaseFrom}
+            {BaseFrom}{filtroData}
             GROUP BY V.NOME
             ORDER BY SUM(S.VALOR) DESC";
 
         using var conexao = CriarConexao();
-        return await conexao.QueryAsync<VendasPorVendedor>(sql);
+        return await conexao.QueryAsync<VendasPorVendedor>(sql, parametros);
+    }
+
+    public async Task<IEnumerable<ProdutoMaisVendido>> ObterProdutosMaisVendidosAsync(DateTime? dataInicio, DateTime? dataFim, int limite = 10)
+    {
+        var parametros = new DynamicParameters();
+        var filtroData = "";
+        if (dataInicio.HasValue)
+        {
+            filtroData += " AND S.DATA >= @dataInicio";
+            parametros.Add("dataInicio", dataInicio.Value.Date);
+        }
+        if (dataFim.HasValue)
+        {
+            filtroData += " AND S.DATA < @dataFim";
+            parametros.Add("dataFim", dataFim.Value.Date.AddDays(1));
+        }
+        parametros.Add("limite", limite);
+
+        var sql = $@"
+            SELECT FIRST @limite
+                P.DESCRICAO AS Produto,
+                SUM(DS.QUANTIDADE) AS QuantidadeVendida,
+                SUM(DS.SUBTOTAL) AS TotalVendido
+            FROM BCODTSAI DS
+            JOIN BCOPR P ON P.CODIGO = DS.CODPR
+            JOIN BCOSAI S ON S.NUMPEDIDO = DS.NUMPEDIDO
+            WHERE S.CANCELADO = 0{filtroData}
+            GROUP BY P.DESCRICAO
+            ORDER BY SUM(DS.SUBTOTAL) DESC";
+
+        using var conexao = CriarConexao();
+        return await conexao.QueryAsync<ProdutoMaisVendido>(sql, parametros);
     }
 }
 
@@ -92,12 +149,19 @@ public class VendaServiceMock : IVendaService
         new() { Cliente = "Atacadão Norte", Vendedor = "Ana Lima", Valor = 12300m, Data = DateTime.Today.AddDays(-7), NumPedido = "1004" },
     };
 
-    public Task<IEnumerable<Venda>> ObterVendasAsync() => Task.FromResult<IEnumerable<Venda>>(_vendas);
+    private IEnumerable<Venda> Filtrar(DateTime? dataInicio, DateTime? dataFim) =>
+        _vendas.Where(v =>
+            (!dataInicio.HasValue || v.Data.Date >= dataInicio.Value.Date) &&
+            (!dataFim.HasValue || v.Data.Date <= dataFim.Value.Date));
 
-    public Task<ResumoVendas> ObterResumoAsync()
+    public Task<IEnumerable<Venda>> ObterVendasAsync(DateTime? dataInicio, DateTime? dataFim) =>
+        Task.FromResult(Filtrar(dataInicio, dataFim));
+
+    public Task<ResumoVendas> ObterResumoAsync(DateTime? dataInicio, DateTime? dataFim)
     {
-        var total = _vendas.Sum(v => v.Valor);
-        var qtd = _vendas.Count;
+        var filtradas = Filtrar(dataInicio, dataFim).ToList();
+        var total = filtradas.Sum(v => v.Valor);
+        var qtd = filtradas.Count;
         return Task.FromResult(new ResumoVendas
         {
             TotalVendido = total,
@@ -106,12 +170,25 @@ public class VendaServiceMock : IVendaService
         });
     }
 
-    public Task<IEnumerable<VendasPorVendedor>> ObterPorVendedorAsync()
+    public Task<IEnumerable<VendasPorVendedor>> ObterPorVendedorAsync(DateTime? dataInicio, DateTime? dataFim)
     {
-        var agrupado = _vendas
+        var agrupado = Filtrar(dataInicio, dataFim)
             .GroupBy(v => v.Vendedor)
             .Select(g => new VendasPorVendedor { Vendedor = g.Key, TotalVendido = g.Sum(v => v.Valor) })
             .OrderByDescending(v => v.TotalVendido);
         return Task.FromResult<IEnumerable<VendasPorVendedor>>(agrupado);
+    }
+
+    public Task<IEnumerable<ProdutoMaisVendido>> ObterProdutosMaisVendidosAsync(DateTime? dataInicio, DateTime? dataFim, int limite = 10)
+    {
+        var dados = new List<ProdutoMaisVendido>
+        {
+            new() { Produto = "Arroz 5kg", QuantidadeVendida = 320, TotalVendido = 6400m },
+            new() { Produto = "Óleo de Soja 900ml", QuantidadeVendida = 280, TotalVendido = 2800m },
+            new() { Produto = "Feijão Carioca 1kg", QuantidadeVendida = 210, TotalVendido = 1890m },
+            new() { Produto = "Açúcar Cristal 5kg", QuantidadeVendida = 150, TotalVendido = 1200m },
+            new() { Produto = "Café Torrado 500g", QuantidadeVendida = 140, TotalVendido = 1680m },
+        };
+        return Task.FromResult<IEnumerable<ProdutoMaisVendido>>(dados.Take(limite));
     }
 }

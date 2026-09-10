@@ -23,9 +23,17 @@ export function obterUsuario() {
   return localStorage.getItem(CHAVE_USUARIO)
 }
 
+function paraQueryString(params) {
+  if (!params) return ''
+  const entradas = Object.entries(params).filter(([, v]) => v !== null && v !== undefined && v !== '')
+  if (entradas.length === 0) return ''
+  const busca = new URLSearchParams(entradas)
+  return `?${busca.toString()}`
+}
+
 async function chamarApi(path, options = {}) {
   const token = obterToken()
-  const ehLogin = path === '/api/auth/login'
+  const ehLogin = path.startsWith('/api/auth/login')
 
   const resposta = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
@@ -67,13 +75,24 @@ export const api = {
   ocupacaoResumo: () => chamarApi('/api/estoque/ocupacao/resumo'),
   pendencias: () => chamarApi('/api/pendencias'),
   pendenciasResumo: () => chamarApi('/api/pendencias/resumo'),
-  vendas: () => chamarApi('/api/vendas'),
-  vendasResumo: () => chamarApi('/api/vendas/resumo'),
-  vendasPorVendedor: () => chamarApi('/api/vendas/por-vendedor'),
-  financeiroContasReceber: () => chamarApi('/api/financeiro/contas-receber'),
-  financeiroContasPagar: () => chamarApi('/api/financeiro/contas-pagar'),
+
+  vendas: (periodo) => chamarApi(`/api/vendas${paraQueryString(periodo)}`),
+  vendasResumo: (periodo) => chamarApi(`/api/vendas/resumo${paraQueryString(periodo)}`),
+  vendasPorVendedor: (periodo) => chamarApi(`/api/vendas/por-vendedor${paraQueryString(periodo)}`),
+  vendasProdutosMaisVendidos: (periodo) => chamarApi(`/api/vendas/produtos-mais-vendidos${paraQueryString(periodo)}`),
+
+  financeiroContasReceber: (periodo) => chamarApi(`/api/financeiro/contas-receber${paraQueryString(periodo)}`),
+  financeiroContasPagar: (periodo) => chamarApi(`/api/financeiro/contas-pagar${paraQueryString(periodo)}`),
   financeiroResumo: () => chamarApi('/api/financeiro/resumo'),
-  compras: () => chamarApi('/api/compras'),
-  comprasResumo: () => chamarApi('/api/compras/resumo'),
-  comprasPorFornecedor: () => chamarApi('/api/compras/por-fornecedor'),
+
+  compras: (periodo) => chamarApi(`/api/compras${paraQueryString(periodo)}`),
+  comprasResumo: (periodo) => chamarApi(`/api/compras/resumo${paraQueryString(periodo)}`),
+  comprasPorFornecedor: (periodo) => chamarApi(`/api/compras/por-fornecedor${paraQueryString(periodo)}`),
+
+  fiscalNotas: (periodo) => chamarApi(`/api/fiscal/notas${paraQueryString(periodo)}`),
+  fiscalResumo: (periodo) => chamarApi(`/api/fiscal/resumo${paraQueryString(periodo)}`),
+  fiscalPorCfop: (periodo) => chamarApi(`/api/fiscal/por-cfop${paraQueryString(periodo)}`),
+  produtos: () => chamarApi('/api/produtos'),
+  produtosResumo: () => chamarApi('/api/produtos/resumo'),
+  produtosPorCategoria: () => chamarApi('/api/produtos/por-categoria'),
 }

@@ -17,23 +17,30 @@ public class VendaController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> ObterVendas()
+    public async Task<IActionResult> ObterVendas([FromQuery] DateTime? dataInicio, [FromQuery] DateTime? dataFim)
     {
-        var dados = await _vendaService.ObterVendasAsync();
+        var dados = await _vendaService.ObterVendasAsync(dataInicio, dataFim);
         return Ok(dados);
     }
 
     [HttpGet("resumo")]
-    public async Task<IActionResult> ObterResumo()
+    public async Task<IActionResult> ObterResumo([FromQuery] DateTime? dataInicio, [FromQuery] DateTime? dataFim)
     {
-        var dados = await _vendaService.ObterResumoAsync();
+        var dados = await _vendaService.ObterResumoAsync(dataInicio, dataFim);
         return Ok(dados);
     }
 
     [HttpGet("por-vendedor")]
-    public async Task<IActionResult> ObterPorVendedor()
+    public async Task<IActionResult> ObterPorVendedor([FromQuery] DateTime? dataInicio, [FromQuery] DateTime? dataFim)
     {
-        var dados = await _vendaService.ObterPorVendedorAsync();
+        var dados = await _vendaService.ObterPorVendedorAsync(dataInicio, dataFim);
+        return Ok(dados);
+    }
+
+    [HttpGet("produtos-mais-vendidos")]
+    public async Task<IActionResult> ObterProdutosMaisVendidos([FromQuery] DateTime? dataInicio, [FromQuery] DateTime? dataFim, [FromQuery] int limite = 10)
+    {
+        var dados = await _vendaService.ObterProdutosMaisVendidosAsync(dataInicio, dataFim, limite);
         return Ok(dados);
     }
 }

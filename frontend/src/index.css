@@ -124,6 +124,43 @@ body {
   color: white;
 }
 
+.sidebar__grupo-cabecalho {
+  display: flex;
+  align-items: stretch;
+}
+
+.sidebar__grupo-cabecalho a {
+  flex: 1;
+}
+
+.sidebar__grupo-toggle {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+}
+
+.sidebar__grupo-toggle:hover {
+  color: var(--text);
+}
+
+.sidebar__submenu {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-left: 22px;
+  margin-top: 2px;
+  margin-bottom: 4px;
+}
+
+.sidebar__submenu a {
+  font-size: 13px;
+  padding: 7px 12px;
+}
+
 .topbar {
   height: 60px;
   flex-shrink: 0;
@@ -133,6 +170,10 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 0 24px;
+}
+
+.topbar__busca-wrapper {
+  position: relative;
 }
 
 .topbar__busca {
@@ -145,6 +186,60 @@ body {
   padding: 7px 12px;
   width: 320px;
   color: var(--text-muted);
+}
+
+.busca-painel {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 340px;
+  max-height: 360px;
+  overflow-y: auto;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
+  padding: 6px;
+  z-index: 50;
+}
+
+.busca-painel__vazio {
+  padding: 12px;
+  color: var(--text-muted);
+  font-size: 13px;
+  margin: 0;
+}
+
+.busca-painel__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--text);
+  text-align: left;
+  padding: 9px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.busca-painel__item:hover {
+  background: var(--bg);
+}
+
+.busca-painel__rotulo {
+  flex: 1;
+}
+
+.busca-painel__tipo {
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px 8px;
 }
 
 .topbar__busca input {
@@ -312,7 +407,6 @@ body {
 .tabela-card {
   display: flex;
   flex-direction: column;
-  max-height: 420px;
 }
 
 .tabela-card h3 {
@@ -350,12 +444,51 @@ body {
 }
 
 .tabela-card__scroll {
-  overflow-y: auto;
   overflow-x: auto;
 }
 
 .tabela-card__scroll table {
   min-width: 480px;
+}
+
+.paginacao {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.paginacao__botoes {
+  display: flex;
+  gap: 6px;
+}
+
+.paginacao__botao {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.paginacao__botao:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.paginacao__botao:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 .chart-card h3,

@@ -17,23 +17,23 @@ public class CompraController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> ObterNotas()
+    public async Task<IActionResult> ObterNotas([FromQuery] DateTime? dataInicio, [FromQuery] DateTime? dataFim)
     {
-        var dados = await _compraService.ObterNotasAsync();
+        var dados = await _compraService.ObterNotasAsync(dataInicio, dataFim);
         return Ok(dados);
     }
 
     [HttpGet("resumo")]
-    public async Task<IActionResult> ObterResumo()
+    public async Task<IActionResult> ObterResumo([FromQuery] DateTime? dataInicio, [FromQuery] DateTime? dataFim)
     {
-        var dados = await _compraService.ObterResumoAsync();
+        var dados = await _compraService.ObterResumoAsync(dataInicio, dataFim);
         return Ok(dados);
     }
 
     [HttpGet("por-fornecedor")]
-    public async Task<IActionResult> ObterPorFornecedor()
+    public async Task<IActionResult> ObterPorFornecedor([FromQuery] DateTime? dataInicio, [FromQuery] DateTime? dataFim)
     {
-        var dados = await _compraService.ObterPorFornecedorAsync();
+        var dados = await _compraService.ObterPorFornecedorAsync(dataInicio, dataFim);
         return Ok(dados);
     }
 }
