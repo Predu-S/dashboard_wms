@@ -22,6 +22,8 @@
 * { box-sizing: border-box; }
 html, body, #root { min-height: 100%; }
 body { margin: 0; background: var(--bg); color: var(--text); }
+html, body { transition: background-color 180ms ease, color 180ms ease; }
+html[data-theme='escuro'], body[data-theme='escuro'] { color-scheme: dark; color: #eef1ee; background: #191b19; }
 button, input, select { font: inherit; }
 button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid #67c9bb; outline-offset: 2px; }
 

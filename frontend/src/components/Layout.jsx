@@ -78,6 +78,15 @@ export default function Layout({ onLogout }) {
   const location = useLocation()
 
   useEffect(() => {
+    document.documentElement.dataset.theme = tema
+    document.body.dataset.theme = tema
+    return () => {
+      delete document.documentElement.dataset.theme
+      delete document.body.dataset.theme
+    }
+  }, [tema])
+
+  useEffect(() => {
     setMenuMobileAberto(false)
   }, [location.pathname])
 
