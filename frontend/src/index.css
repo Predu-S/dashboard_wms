@@ -199,6 +199,10 @@ tbody tr:hover { background: #f8fbfa; }
 .login-card::before { content: 'S'; display: grid; place-items: center; width: 46px; height: 46px; margin: 0 auto 5px; border-radius: 14px; background: var(--accent); color: white; font: 800 22px Manrope, sans-serif; box-shadow: 0 8px 18px rgb(8 127 120 / 20%); }
 .login-card__titulo { margin: 0; font: 800 23px Manrope, sans-serif; letter-spacing: -.5px; color: #193344; text-align: center; }
 .login-card__subtitulo { margin: -5px 0 9px; font-size: 13px; color: var(--text-muted); text-align: center; }
+.demo-abertura { width: min(100%, 340px); display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 30px 26px; border: 1px solid #e1e9e3; border-radius: 16px; background: #fff; box-shadow: 0 20px 60px rgb(25 52 68 / 10%); text-align: center; }
+.demo-abertura__icone { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 13px; color: #fff; background: var(--accent); font: 800 21px Manrope, sans-serif; }
+.demo-abertura h1 { margin: 0; color: #26372f; font: 800 21px Manrope, sans-serif; }
+.demo-abertura p { margin: 0; color: #78857e; font-size: 13px; line-height: 1.5; }
 .login-campo { display: flex; align-items: center; gap: 10px; background: #f8fafb; border: 1px solid #e1e8eb; border-radius: 9px; padding: 11px 12px; color: #82919a; }
 .login-campo:focus-within { border-color: #68aaa4; box-shadow: 0 0 0 3px rgb(8 127 120 / 9%); }
 .login-campo input { background: none; border: none; outline: none; color: var(--text); font-size: 13px; width: 100%; }
