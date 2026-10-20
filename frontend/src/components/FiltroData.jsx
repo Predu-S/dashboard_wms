@@ -1,4 +1,5 @@
-import { Calendar } from 'lucide-react'
+import { Calendar, Check, X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 
 const ATALHOS = [
   { valor: 'todos', rotulo: 'Todo o período' },
@@ -50,40 +51,130 @@ export function calcularPeriodo(atalho, dataInicioCustom, dataFimCustom) {
 }
 
 export default function FiltroData({ atalho, onSelecionarAtalho, dataInicio, dataFim, onSelecionarDataInicio, onSelecionarDataFim, className = '' }) {
+  const [menuPeriodoAberto, setMenuPeriodoAberto] = useState(false)
+  const [modalPersonalizadoAberto, setModalPersonalizadoAberto] = useState(false)
+  const [dataInicioPendente, setDataInicioPendente] = useState(dataInicio || '')
+  const [dataFimPendente, setDataFimPendente] = useState(dataFim || '')
+  const seletorPeriodoRef = useRef(null)
+
+  useEffect(() => {
+    if (!menuPeriodoAberto && !modalPersonalizadoAberto) return undefined
+    const aoClicarFora = (event) => {
+      if (!seletorPeriodoRef.current?.contains(event.target)) setMenuPeriodoAberto(false)
+    }
+    const aoPressionarTecla = (event) => {
+      if (event.key === 'Escape') {
+        setMenuPeriodoAberto(false)
+        setModalPersonalizadoAberto(false)
+      }
+    }
+    document.addEventListener('pointerdown', aoClicarFora)
+    document.addEventListener('keydown', aoPressionarTecla)
+    return () => {
+      document.removeEventListener('pointerdown', aoClicarFora)
+      document.removeEventListener('keydown', aoPressionarTecla)
+    }
+  }, [menuPeriodoAberto])
+
+  const periodoSelecionado = ATALHOS.find((item) => item.valor === atalho)?.rotulo ?? 'Todo o período'
+  const fecharModalPersonalizado = () => setModalPersonalizadoAberto(false)
+
+  function escolherPeriodo(valor) {
+    setMenuPeriodoAberto(false)
+    if (valor === 'personalizado') {
+      setDataInicioPendente(dataInicio || '')
+      setDataFimPendente(dataFim || '')
+      setModalPersonalizadoAberto(true)
+      return
+    }
+    setModalPersonalizadoAberto(false)
+    onSelecionarAtalho(valor)
+  }
+
   return (
-    <div className={`filtro-barra ${className}`.trim()}>
-      <div className="filtro-barra__item">
-        <Calendar size={14} />
-        <label htmlFor="filtro-periodo">Período</label>
-        <select id="filtro-periodo" value={atalho} onChange={(e) => onSelecionarAtalho(e.target.value)}>
-          {ATALHOS.map((a) => (
-            <option key={a.valor} value={a.valor}>{a.rotulo}</option>
-          ))}
-        </select>
+    <>
+      <div className={`filtro-barra ${className}`.trim()}>
+        <div className="filtro-barra__item" ref={seletorPeriodoRef}>
+          <label htmlFor="filtro-periodo">Período</label>
+          <button
+            id="filtro-periodo"
+            className="filtro-periodo__gatilho"
+            type="button"
+            title={`Período: ${periodoSelecionado}`}
+            aria-label={`Selecionar período. Atual: ${periodoSelecionado}`}
+            aria-haspopup="listbox"
+            aria-expanded={menuPeriodoAberto}
+            onClick={() => setMenuPeriodoAberto((aberto) => !aberto)}
+            onKeyDown={(event) => {
+              if (event.key === 'ArrowDown') { event.preventDefault(); setMenuPeriodoAberto(true) }
+            }}
+          >
+            <Calendar size={17} aria-hidden="true" />
+          </button>
+          {menuPeriodoAberto && (
+            <div className="filtro-periodo__menu busca-painel" role="listbox" aria-label="Selecionar período">
+              {ATALHOS.map((item) => (
+                <button
+                  key={item.valor}
+                  className="busca-painel__item filtro-periodo__opcao"
+                  type="button"
+                  role="option"
+                  aria-selected={atalho === item.valor}
+                  onClick={() => escolherPeriodo(item.valor)}
+                >
+                  <span className="busca-painel__rotulo">{item.rotulo}</span>
+                  {atalho === item.valor && <Check size={15} aria-hidden="true" />}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
-      {atalho === 'personalizado' && (
-        <>
-          <div className="filtro-barra__item">
-            <label htmlFor="filtro-data-inicio">De</label>
-            <input
-              id="filtro-data-inicio"
-              type="date"
-              value={dataInicio || ''}
-              onChange={(e) => onSelecionarDataInicio(e.target.value)}
-            />
-          </div>
-          <div className="filtro-barra__item">
-            <label htmlFor="filtro-data-fim">Até</label>
-            <input
-              id="filtro-data-fim"
-              type="date"
-              value={dataFim || ''}
-              onChange={(e) => onSelecionarDataFim(e.target.value)}
-            />
-          </div>
-        </>
+      {modalPersonalizadoAberto && (
+        <div className="modal-backdrop modal-periodo__backdrop" onClick={fecharModalPersonalizado}>
+          <section
+            className="modal-periodo"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-periodo-titulo"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="modal-periodo__cabecalho">
+              <div>
+                <h2 id="modal-periodo-titulo">Período personalizado</h2>
+                <p>Escolha as datas de início e fim para filtrar o dashboard.</p>
+              </div>
+              <button className="modal-reposicao__fechar" type="button" onClick={fecharModalPersonalizado} aria-label="Fechar">
+                <X size={17} />
+              </button>
+            </header>
+            <div className="modal-periodo__campos">
+              <label htmlFor="filtro-data-inicio">Data inicial
+                <input id="filtro-data-inicio" type="date" value={dataInicioPendente} max={dataFimPendente || undefined} onChange={(event) => setDataInicioPendente(event.target.value)} />
+              </label>
+              <label htmlFor="filtro-data-fim">Data final
+                <input id="filtro-data-fim" type="date" value={dataFimPendente} min={dataInicioPendente || undefined} onChange={(event) => setDataFimPendente(event.target.value)} />
+              </label>
+            </div>
+            <footer className="modal-periodo__rodape">
+              <button className="modal-periodo__cancelar" type="button" onClick={fecharModalPersonalizado}>Cancelar</button>
+              <button
+                className="modal-reposicao__botao"
+                type="button"
+                disabled={!dataInicioPendente || !dataFimPendente || dataInicioPendente > dataFimPendente}
+                onClick={() => {
+                  onSelecionarDataInicio(dataInicioPendente)
+                  onSelecionarDataFim(dataFimPendente)
+                  onSelecionarAtalho('personalizado')
+                  fecharModalPersonalizado()
+                }}
+              >Aplicar período</button>
+            </footer>
+          </section>
+        </div>
       )}
-    </div>
+    </>
   )
 }
+

@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Outlet, NavLink, useLocation } from 'react-router-dom'
-import { Home, Boxes, Warehouse, Package, ShoppingCart, Wallet, Truck, FileText, Settings, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react'
+import { Home, Boxes, Warehouse, Package, ShoppingCart, Wallet, Truck, FileText, Settings, ChevronLeft, ChevronRight, ChevronDown, Menu, X } from 'lucide-react'
 import Topbar from './Topbar'
 import { PeriodoProvider } from '../context/PeriodoContext'
 
@@ -67,6 +67,7 @@ function ItemMenu({ item, sidebarRecolhida }) {
 
 export default function Layout({ onLogout }) {
   const [sidebarRecolhida, setSidebarRecolhida] = useState(false)
+  const [menuMobileAberto, setMenuMobileAberto] = useState(false)
   const [tema, setTema] = useState(() => {
     try {
       return localStorage.getItem('dashboard-tema') === 'escuro' ? 'escuro' : 'claro'
@@ -75,6 +76,23 @@ export default function Layout({ onLogout }) {
     }
   })
   const location = useLocation()
+
+  useEffect(() => {
+    setMenuMobileAberto(false)
+  }, [location.pathname])
+
+  useEffect(() => {
+    const breakpointMobile = window.matchMedia('(max-width: 700px)')
+    const ajustarSidebar = () => {
+      if (breakpointMobile.matches) {
+        setSidebarRecolhida(false)
+        setMenuMobileAberto(false)
+      }
+    }
+    ajustarSidebar()
+    breakpointMobile.addEventListener('change', ajustarSidebar)
+    return () => breakpointMobile.removeEventListener('change', ajustarSidebar)
+  }, [])
 
   function alternarTema() {
     setTema((atual) => {
@@ -91,15 +109,32 @@ export default function Layout({ onLogout }) {
   return (
     <PeriodoProvider>
       <div className="app" data-theme={tema}>
-        <aside className={`sidebar ${sidebarRecolhida ? 'sidebar--recolhida' : ''}`}>
+        {menuMobileAberto && (
+          <button
+            className="sidebar__backdrop"
+            type="button"
+            aria-label="Fechar menu de navegação"
+            onClick={() => setMenuMobileAberto(false)}
+          />
+        )}
+        <aside className={`sidebar ${sidebarRecolhida ? 'sidebar--recolhida' : ''} ${menuMobileAberto ? 'sidebar--mobile-aberta' : ''}`}>
           <div className="sidebar__topo">
             {!sidebarRecolhida && <div className="sidebar__logo">Dashboard Siserp</div>}
             <button
               className="sidebar__toggle"
-              onClick={() => setSidebarRecolhida((atual) => !atual)}
-              title={sidebarRecolhida ? 'Expandir menu' : 'Recolher menu'}
+              onClick={() => {
+                if (window.matchMedia('(max-width: 700px)').matches) setMenuMobileAberto((aberto) => !aberto)
+                else setSidebarRecolhida((atual) => !atual)
+              }}
+              title={menuMobileAberto ? 'Fechar menu' : sidebarRecolhida ? 'Expandir menu' : 'Recolher menu'}
+              aria-label={menuMobileAberto ? 'Fechar menu' : 'Abrir menu'}
+              aria-expanded={menuMobileAberto}
             >
-              {sidebarRecolhida ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+              <span className="sidebar__toggle-desktop">
+                {sidebarRecolhida ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+              </span>
+              <Menu className="sidebar__toggle-mobile" size={20} />
+              <X className="sidebar__toggle-mobile sidebar__toggle-mobile--fechar" size={20} />
             </button>
           </div>
           <nav>
@@ -119,3 +154,4 @@ export default function Layout({ onLogout }) {
     </PeriodoProvider>
   )
 }
+

@@ -9,6 +9,7 @@ import {
   Moon,
   UserCircle,
   LogOut,
+  Sparkles,
   Home,
   Boxes,
   Warehouse,
@@ -157,14 +158,24 @@ export default function Topbar({ onLogout, tema = 'claro', onAlternarTema }) {
         <button className="topbar__icone-btn" title="Notificações">
           <Bell size={18} />
         </button>
-        <div className="topbar__usuario">
-          <UserCircle size={22} />
-          <span>{usuario}</span>
-        </div>
-        <button className="topbar__icone-btn" title="Sair" onClick={onLogout}>
-          <LogOut size={18} />
-        </button>
+        {USANDO_DADOS_FICTICIOS ? (
+          <span className="topbar__demo-badge" title="Você está visualizando uma demonstração com dados fictícios">
+            <Sparkles size={14} aria-hidden="true" />
+            <span>Modo demonstração</span>
+          </span>
+        ) : (
+          <>
+            <div className="topbar__usuario">
+              <UserCircle size={22} />
+              <span>{usuario}</span>
+            </div>
+            <button className="topbar__icone-btn" title="Sair" onClick={onLogout}>
+              <LogOut size={18} />
+            </button>
+          </>
+        )}
       </div>
     </header>
   )
 }
+
