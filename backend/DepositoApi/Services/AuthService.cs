@@ -49,6 +49,15 @@ public class AuthService : IAuthService
                 "Muitas tentativas de login. Tente novamente em alguns minutos.");
         }
 
+        if (_configuration.GetValue<bool>("UsarDadosFicticios") &&
+            _configuration.GetValue<bool>("Demo:Enabled") &&
+            string.Equals(request.Usuario, _configuration["Demo:Username"], StringComparison.Ordinal) &&
+            string.Equals(request.Senha, _configuration["Demo:Password"], StringComparison.Ordinal))
+        {
+            _tentativas.TryRemove(ipOrigem, out _);
+            return GerarToken(request.Usuario, "demo");
+        }
+
         var tenant = _tenantService.ObterPorUsuario(request.Usuario);
 
         var credenciaisValidas =
@@ -65,7 +74,7 @@ public class AuthService : IAuthService
         // Login OK: zera o contador de tentativas desse IP
         _tentativas.TryRemove(ipOrigem, out _);
 
-        return GerarToken(tenant);
+        return GerarToken(tenant.Usuario, tenant.Id);
     }
 
     private bool EstaBloqueado(string ip)
@@ -95,7 +104,7 @@ public class AuthService : IAuthService
             });
     }
 
-    private LoginResponse GerarToken(Tenant tenant)
+    private LoginResponse GerarToken(string usuario, string tenantId)
     {
         var chaveSecreta = _configuration["Jwt:SecretKey"]
             ?? throw new InvalidOperationException("Jwt:SecretKey não configurada.");
@@ -107,8 +116,8 @@ public class AuthService : IAuthService
 
         var claims = new[]
         {
-            new Claim(ClaimTypes.Name, tenant.Usuario),
-            new Claim("tenantId", tenant.Id),
+            new Claim(ClaimTypes.Name, usuario),
+            new Claim("tenantId", tenantId),
         };
 
         var credenciais = new SigningCredentials(
@@ -125,7 +134,7 @@ public class AuthService : IAuthService
         return new LoginResponse
         {
             Token = new JwtSecurityTokenHandler().WriteToken(token),
-            Usuario = tenant.Usuario,
+            Usuario = usuario,
             ExpiraEm = expiraEm,
         };
     }

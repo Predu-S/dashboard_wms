@@ -1,46 +1,64 @@
-# Depósito BI 📦
+# Depósito BI
 
-Dashboard de ocupação de armazém/depósito — protótipo de um produto de BI
-white-label, com backend em **.NET/C#** e frontend em **React**.
+Dashboard de BI para operações de depósito, com interface React e API ASP.NET Core. Este repositório contém um modo de demonstração com dados inteiramente fictícios, adequado para apresentação em portfólio.
 
-![status](https://img.shields.io/badge/status-em%20desenvolvimento-blue)
+## Demonstração pública
 
-## ✨ Funcionalidades
+A publicação usa dois serviços: interface no Netlify e API no Render. A API de demonstração deve permanecer com `UsarDadosFicticios=true`; não configure caminhos, credenciais nem conexão com um banco Firebird real.
 
-- KPIs de ocupação (geral, capacidade total, posições ocupadas, endereços críticos)
-- Gráfico de ocupação por Depósito
-- Tabela detalhada por endereço (Depósito / Rua / Prédio / Andar / Apartamento)
-- Filtro por Depósito
-- Integração com Firebird via view SQL (ou dados fictícios para demo)
+### API no Render
 
-## 🛠️ Stack
+Crie um Web Service Docker apontando para `backend/DepositoApi/Dockerfile`, com o diretório `backend/DepositoApi` como contexto. Configure as variáveis:
 
-| Camada    | Tecnologia                        |
-|-----------|------------------------------------|
-| Backend   | ASP.NET Core Web API (.NET 8)      |
-| Banco     | Firebird (via `FirebirdSql.Data.FirebirdClient` + Dapper) |
-| Frontend  | React + Vite + Recharts            |
+| Variável | Valor |
+| --- | --- |
+| `UsarDadosFicticios` | `true` |
+| `Demo__Enabled` | `true` |
+| `Demo__Username` | `demo` |
+| `Demo__Password` | `demo` |
+| `Jwt__SecretKey` | segredo aleatório com pelo menos 32 bytes, gerado e guardado pelo provedor |
+| `Cors__AllowedOrigins__0` | origem pública exata do site no Netlify, por exemplo `https://seu-site.netlify.app` |
 
-## 🚀 Rodando localmente
+O serviço oferece `GET /health` para verificação de disponibilidade. O modo de demonstração só aceita o login configurado quando os dados fictícios estão ativos. As credenciais `demo` são públicas por definição e só devem ser usadas com dados fictícios.
+
+### Interface no Netlify
+
+O `netlify.toml` já configura o build, a publicação de `frontend/dist`, o fallback para rotas do React e cabeçalhos básicos de segurança. No painel do Netlify, defina estas variáveis antes do deploy:
+
+| Variável | Valor |
+| --- | --- |
+| `VITE_API_URL` | URL HTTPS pública da API no Render, sem barra no final |
+| `VITE_DEMO_MODE` | `true` |
+| `VITE_DEMO_USERNAME` | mesmo valor de `Demo__Username` na API |
+| `VITE_DEMO_PASSWORD` | mesmo valor de `Demo__Password` na API |
+
+As variáveis `VITE_*` são incluídas no JavaScript público do site. Não coloque nelas chaves privadas, tokens ou credenciais de bancos de dados. Depois de definir as variáveis, faça um novo deploy para que o Vite as incorpore ao build.
+
+## Desenvolvimento local
+
+O backend usa `appsettings.Development.json` para habilitar a demonstração local (`demo` / `demo`) e permitir as origens locais do Vite. A chave JWT é obrigatória e deve ser configurada como segredo de usuário do .NET, sem gravá-la nos arquivos do projeto:
 
 ```bash
-# Backend
 cd backend/DepositoApi
-dotnet restore
+dotnet user-secrets init
+dotnet user-secrets set "Jwt:SecretKey" "gere-um-segredo-local-com-pelo-menos-32-bytes"
 dotnet run
+```
 
-# Frontend (em outro terminal)
+Em outro terminal:
+
+```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-Por padrão a API sobe com **dados fictícios** (`UsarDadosFicticios: true` no
-`appsettings.json`), então dá pra testar sem precisar do Firebird configurado.
+Para testar o site de produção localmente, copie `frontend/.env.example` para `frontend/.env.local`, ajuste `VITE_API_URL` e execute `npm run build` e `npm run preview`.
 
-Para conectar num Firebird real, ajuste `ConnectionStrings:FirebirdDefault`
-no `appsettings.json` e mude `UsarDadosFicticios` para `false`.
+## Segurança e licença
 
-## 📄 Licença
+- Segredos e configurações locais ficam fora dos arquivos versionados; o `.gitignore` e o `.dockerignore` excluem configurações locais e artefatos de compilação.
+- O modo fictício não usa tenants nem connection strings por padrão. Configurações Firebird reais só devem ser fornecidas fora do repositório, após uma revisão própria de segurança e acesso.
+- Este projeto ainda não declara uma licença de código aberto. Até que uma licença seja adicionada, não presuma que o código pode ser reutilizado por terceiros.
 
-Projeto privado / uso interno.
+Se uma chave ou senha que já existiu no projeto tiver sido publicada ou enviada a um repositório remoto, revogue-a/rotacione-a no serviço correspondente. Remover o valor do arquivo atual não remove versões anteriores do histórico.

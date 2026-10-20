@@ -1,0 +1,8 @@
+**/bin/
+**/obj/
+**/.vs/
+**/.env*
+**/appsettings.Local.json
+**/appsettings.*.Local.json
+**/secrets.json
+.git/

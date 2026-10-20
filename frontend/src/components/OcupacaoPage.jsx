@@ -4,6 +4,8 @@ import KpiCard from './KpiCard'
 import OcupacaoChart from './OcupacaoChart'
 import OcupacaoTabela from './OcupacaoTabela'
 import FiltroBarra from './FiltroBarra'
+import GraficosAnaliticos from './GraficosAnaliticos'
+import { agruparCampos } from './chartUtils'
 
 export default function OcupacaoPage() {
   const [resumo, setResumo] = useState([])
@@ -49,6 +51,15 @@ export default function OcupacaoPage() {
   const ocupadoTotal = resumoFiltrado.reduce((soma, d) => soma + d.quantidadeOcupada, 0)
   const ocupacaoGeral = capacidadeTotal > 0 ? Math.round((ocupadoTotal / capacidadeTotal) * 1000) / 10 : 0
   const enderecosCriticos = detalhadoPorDeposito.filter((d) => d.percentualOcupacao >= 90).length
+  const ocupacaoPorRuaBase = agruparCampos(detalhadoPorDeposito, (d) => `Dep. ${d.deposito} · Rua ${d.rua}`, (d) => ({ capacidade: d.capacidadeTotal, ocupado: d.quantidadeOcupada }))
+  const ocupacaoPorRua = ocupacaoPorRuaBase.map((d) => ({ ...d, percentual: d.capacidade ? Math.round(d.ocupado / d.capacidade * 1000) / 10 : 0 })).sort((a, b) => b.percentual - a.percentual).slice(0, 10)
+  const enderecosMaisOcupados = detalhadoPorDeposito.slice().sort((a, b) => b.percentualOcupacao - a.percentualOcupacao).slice(0, 8).map((d) => ({ label: `${d.deposito} · ${d.rua}/${d.predio}/${d.andar}/${d.apartamento}`, percentual: d.percentualOcupacao }))
+  const faixasOcupacao = [
+    { label: '0–49%', valor: detalhadoPorDeposito.filter((d) => d.percentualOcupacao < 50).length, cor: 'var(--chart-green-soft)' },
+    { label: '50–74%', valor: detalhadoPorDeposito.filter((d) => d.percentualOcupacao >= 50 && d.percentualOcupacao < 75).length, cor: 'var(--chart-green)' },
+    { label: '75–89%', valor: detalhadoPorDeposito.filter((d) => d.percentualOcupacao >= 75 && d.percentualOcupacao < 90).length, cor: 'var(--chart-warning)' },
+    { label: '90% ou mais', valor: detalhadoPorDeposito.filter((d) => d.percentualOcupacao >= 90).length, cor: 'var(--chart-danger)' },
+  ].filter((d) => d.valor > 0)
 
   function alternarFiltroCriticos() {
     setSituacaoFiltro((atual) => (atual === 'critico' ? 'todas' : 'critico'))
@@ -96,6 +107,11 @@ export default function OcupacaoPage() {
             <OcupacaoChart dados={resumoFiltrado} />
             <OcupacaoTabela dados={detalhadoFiltrado} />
           </section>
+          <GraficosAnaliticos graficos={[
+            { titulo: 'Ocupação por rua', dados: ocupacaoPorRua, tipo: 'barra', formato: 'percentual', series: [{ chave: 'percentual', nome: 'Ocupação', corCondicional: { campo: 'percentual', limite: 90, acima: 'var(--chart-danger)', abaixo: 'var(--chart-green)' } }] },
+            { titulo: 'Endereços com maior ocupação', dados: enderecosMaisOcupados, tipo: 'barra', horizontal: true, formato: 'percentual', series: [{ chave: 'percentual', nome: 'Ocupação', corCondicional: { campo: 'percentual', limite: 90, acima: 'var(--chart-danger)', abaixo: 'var(--chart-green)' } }] },
+            { titulo: 'Distribuição dos endereços', dados: faixasOcupacao, tipo: 'pizza', series: [{ chave: 'valor', nome: 'Endereços' }] },
+          ]} />
         </>
       )}
     </>

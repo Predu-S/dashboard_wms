@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Lock, User, LogIn } from 'lucide-react'
+import { Lock, User, LogIn, Sparkles } from 'lucide-react'
 import { api, salvarToken, salvarUsuario } from '../api'
 
 export default function LoginPage({ onLoginSucesso }) {
@@ -7,6 +7,25 @@ export default function LoginPage({ onLoginSucesso }) {
   const [senha, setSenha] = useState('')
   const [erro, setErro] = useState(null)
   const [carregando, setCarregando] = useState(false)
+  const demoHabilitada = import.meta.env.DEV || import.meta.env.VITE_DEMO_MODE === 'true'
+
+  async function entrarNaDemonstracao() {
+    setErro(null)
+    setCarregando(true)
+    try {
+      const resposta = await api.login(
+        import.meta.env.VITE_DEMO_USERNAME || 'demo',
+        import.meta.env.VITE_DEMO_PASSWORD || 'demo'
+      )
+      salvarToken(resposta.token)
+      salvarUsuario(resposta.usuario)
+      onLoginSucesso()
+    } catch (e) {
+      setErro(e.message || 'Não foi possível abrir a demonstração.')
+    } finally {
+      setCarregando(false)
+    }
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -59,6 +78,11 @@ export default function LoginPage({ onLoginSucesso }) {
         <button type="submit" className="login-botao" disabled={carregando}>
           <LogIn size={16} /> {carregando ? 'Entrando...' : 'Entrar'}
         </button>
+        {demoHabilitada && (
+          <button type="button" className="login-botao login-botao--demo" onClick={entrarNaDemonstracao} disabled={carregando}>
+            <Sparkles size={16} /> Explorar demonstração
+          </button>
+        )}
       </form>
     </div>
   )

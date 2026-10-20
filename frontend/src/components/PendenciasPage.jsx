@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { api } from '../api'
 import KpiCard from './KpiCard'
 import TabelaDados from './TabelaDados'
+import GraficosAnaliticos from './GraficosAnaliticos'
+import { agruparCampos, agruparSoma } from './chartUtils'
 
 const ROTULOS_TIPO = {
   ENTRADA: 'Entradas',
@@ -40,6 +42,10 @@ export default function PendenciasPage() {
   )
 
   const totalPendencias = resumo.reduce((soma, r) => soma + r.quantidade, 0)
+  const pendenciasPorTipo = resumo.map((r) => ({ label: ROTULOS_TIPO[r.tipo] || r.tipo, valor: r.quantidade }))
+  const quantidadePorDeposito = agruparSoma(pendencias, (p) => `Depósito ${p.deposito}`, (p) => p.quantidade, 'label', 'unidades')
+  const tiposPorDeposito = agruparCampos(pendencias, (p) => `Depósito ${p.deposito}`, (p) => ({ [p.tipo]: 1 }))
+  const seriesPorTipo = Object.entries(ROTULOS_TIPO).map(([tipo, rotulo]) => ({ chave: tipo, nome: rotulo }))
 
   return (
     <>
@@ -66,6 +72,12 @@ export default function PendenciasPage() {
               />
             ))}
           </section>
+
+          <GraficosAnaliticos graficos={[
+            { titulo: 'Pendências por tipo', dados: pendenciasPorTipo, tipo: 'pizza', series: [{ chave: 'valor', nome: 'Pendências' }] },
+            { titulo: 'Unidades em aberto por depósito', dados: quantidadePorDeposito, tipo: 'barra', horizontal: true, series: [{ chave: 'unidades', nome: 'Unidades' }] },
+            { titulo: 'Composição das pendências por depósito', dados: tiposPorDeposito, tipo: 'barra', empilhado: true, series: seriesPorTipo },
+          ]} />
 
           <TabelaDados
             titulo="Detalhamento das Pendências"

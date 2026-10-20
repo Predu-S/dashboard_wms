@@ -3,6 +3,8 @@ import { api } from '../api'
 import KpiCard from './KpiCard'
 import TabelaDados from './TabelaDados'
 import { usePeriodo } from '../context/PeriodoContext'
+import GraficosAnaliticos from './GraficosAnaliticos'
+import { agruparPorMes, agruparSoma } from './chartUtils'
 
 function formatarMoeda(valor) {
   return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -17,8 +19,8 @@ function StatusPill({ pago, vencido }) {
     <span
       className="status-pill"
       style={{
-        color: pago ? '#3ecf8e' : vencido ? '#ff5c5c' : '#8b93a7',
-        borderColor: pago ? '#3ecf8e' : vencido ? '#ff5c5c' : '#2a2f3a',
+        color: pago ? 'var(--accent)' : vencido ? 'var(--chart-danger)' : 'var(--text-muted)',
+        borderColor: pago ? 'var(--accent)' : vencido ? 'var(--chart-danger)' : 'var(--border)',
       }}
     >
       {pago ? 'Pago' : vencido ? 'Vencido' : 'Em aberto'}
@@ -89,6 +91,13 @@ export default function FinanceiroPage() {
     ],
     [aba]
   )
+  const fluxoPorMes = agruparPorMes(contasNormalizadas, (c) => c.vencimento, [{ chave: 'valor', obterValor: (c) => c.valor }])
+  const maioresContrapartes = agruparSoma(contasNormalizadas, (c) => c.nome, (c) => c.valor, 'label', 'valor').slice(0, 8)
+  const situacaoContas = [
+    { label: 'Em aberto', valor: contasNormalizadas.filter((c) => !c.pago && !c.vencido).length, cor: 'var(--chart-warning)' },
+    { label: 'Vencidas', valor: contasNormalizadas.filter((c) => c.vencido).length, cor: 'var(--chart-danger)' },
+    { label: aba === 'receber' ? 'Recebidas' : 'Pagas', valor: contasNormalizadas.filter((c) => c.pago).length, cor: 'var(--chart-green)' },
+  ].filter((item) => item.valor > 0)
 
   return (
     <>
@@ -125,6 +134,12 @@ export default function FinanceiroPage() {
               Contas a Pagar
             </button>
           </div>
+
+          <GraficosAnaliticos graficos={[
+            { titulo: `Situação das contas a ${aba === 'receber' ? 'receber' : 'pagar'}`, dados: situacaoContas, tipo: 'pizza', series: [{ chave: 'valor', nome: 'Títulos' }] },
+            { titulo: `Valores por mês de vencimento · ${aba === 'receber' ? 'recebimentos' : 'pagamentos'}`, dados: fluxoPorMes, tipo: 'area', formato: 'moeda', series: [{ chave: 'valor', nome: 'Valor previsto' }] },
+            { titulo: `${aba === 'receber' ? 'Clientes' : 'Fornecedores'} por valor`, dados: maioresContrapartes, tipo: 'barra', horizontal: true, formato: 'moeda', series: [{ chave: 'valor', nome: 'Valor' }] },
+          ]} />
 
           <TabelaDados
             titulo={aba === 'receber' ? 'Títulos a Receber' : 'Títulos a Pagar'}

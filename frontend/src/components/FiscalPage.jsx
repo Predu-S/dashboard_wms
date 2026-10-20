@@ -4,6 +4,8 @@ import { api } from '../api'
 import KpiCard from './KpiCard'
 import TabelaDados from './TabelaDados'
 import { usePeriodo } from '../context/PeriodoContext'
+import GraficosAnaliticos from './GraficosAnaliticos'
+import { agruparPorMes, agruparSoma } from './chartUtils'
 
 function formatarMoeda(valor) {
   return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -29,6 +31,10 @@ export default function FiscalPage() {
   const [porCfop, setPorCfop] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState(null)
+
+  const faturamentoMensal = agruparPorMes(notas, (n) => n.dtSaida, [{ chave: 'total', obterValor: (n) => n.valorTotalNota }])
+  const notasPorVendedor = agruparSoma(notas, (n) => n.vendedor, () => 1, 'label', 'notas')
+  const faturamentoPorVendedor = agruparSoma(notas, (n) => n.vendedor, (n) => n.valorTotalNota, 'label', 'valor').slice(0, 8)
 
   useEffect(() => {
     setCarregando(true)
@@ -62,21 +68,27 @@ export default function FiscalPage() {
 
           <section className="chart-card">
             <h3>Notas por CFOP</h3>
-            <ResponsiveContainer width="100%" height={280}>
+            <ResponsiveContainer width="100%" height={220}>
               <BarChart data={porCfop} margin={{ top: 5, right: 10, left: 0, bottom: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#2a2f3a" />
-                <XAxis dataKey="cfop" stroke="#8b93a7" interval={0} tick={{ fontSize: 12 }} />
-                <YAxis stroke="#8b93a7" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
+                <XAxis dataKey="cfop" stroke="var(--chart-axis)" interval={0} tick={{ fontSize: 12 }} />
+                <YAxis stroke="var(--chart-axis)" />
                 <Tooltip
                   cursor={{ fill: 'rgba(255, 255, 255, 0.08)' }}
-                  contentStyle={{ background: '#1b1f27', border: '1px solid #2a2f3a', borderRadius: 8 }}
-                  labelStyle={{ color: '#e6e9f0' }}
+                  contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, boxShadow: '0 5px 18px rgba(23,43,58,.12)', color: 'var(--text)' }}
+                  labelStyle={{ color: 'var(--text)' }}
                   formatter={(value, nome) => [nome === 'total' ? formatarMoeda(value) : value, nome === 'total' ? 'Total' : 'Notas']}
                 />
-                <Bar dataKey="total" fill="#a970ff" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="total" fill="var(--chart-green-muted)" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </section>
+
+          <GraficosAnaliticos graficos={[
+            { titulo: 'Evolução mensal das notas fiscais', dados: faturamentoMensal, tipo: 'area', formato: 'moeda', series: [{ chave: 'total', nome: 'Faturamento' }] },
+            { titulo: 'Notas emitidas por vendedor', dados: notasPorVendedor, tipo: 'barra', horizontal: true, series: [{ chave: 'notas', nome: 'Notas' }] },
+            { titulo: 'Faturamento por vendedor', dados: faturamentoPorVendedor, tipo: 'barra', horizontal: true, formato: 'moeda', series: [{ chave: 'valor', nome: 'Faturamento' }] },
+          ]} />
 
           <TabelaDados
             titulo="Notas Fiscais"

@@ -4,6 +4,8 @@ import { api } from '../api'
 import KpiCard from './KpiCard'
 import TabelaDados from './TabelaDados'
 import { usePeriodo } from '../context/PeriodoContext'
+import GraficosAnaliticos from './GraficosAnaliticos'
+import { agruparPorMes, agruparSoma } from './chartUtils'
 
 function formatarMoeda(valor) {
   return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -31,6 +33,10 @@ export default function VendasPage() {
   const [produtosMaisVendidos, setProdutosMaisVendidos] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState(null)
+
+  const vendasPorMes = agruparPorMes(vendas, (v) => v.data, [{ chave: 'totalVendido', obterValor: (v) => v.valor }])
+  const vendasPorCliente = agruparSoma(vendas, (v) => v.cliente, (v) => v.valor, 'label', 'valor').slice(0, 8)
+  const vendasPorDia = agruparSoma(vendas, (v) => new Intl.DateTimeFormat('pt-BR', { weekday: 'long' }).format(new Date(v.data)), (v) => v.valor, 'label', 'valor')
 
   useEffect(() => {
     setCarregando(true)
@@ -71,18 +77,18 @@ export default function VendasPage() {
           <section className="grid-principal">
             <div className="chart-card">
               <h3>Vendas por Vendedor</h3>
-              <ResponsiveContainer width="100%" height={280}>
+              <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={porVendedor} margin={{ top: 5, right: 10, left: 0, bottom: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#2a2f3a" />
-                  <XAxis dataKey="vendedor" stroke="#8b93a7" interval={0} tick={{ fontSize: 12 }} angle={-30} textAnchor="end" height={50} />
-                  <YAxis stroke="#8b93a7" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
+                  <XAxis dataKey="vendedor" stroke="var(--chart-axis)" interval={0} tick={{ fontSize: 12 }} angle={-30} textAnchor="end" height={50} />
+                  <YAxis stroke="var(--chart-axis)" />
                   <Tooltip
                     cursor={{ fill: 'rgba(255, 255, 255, 0.08)' }}
-                    contentStyle={{ background: '#1b1f27', border: '1px solid #2a2f3a', borderRadius: 8 }}
-                    labelStyle={{ color: '#e6e9f0' }}
+                    contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, boxShadow: '0 5px 18px rgba(23,43,58,.12)', color: 'var(--text)' }}
+                    labelStyle={{ color: 'var(--text)' }}
                     formatter={(value) => [formatarMoeda(value), 'Total']}
                   />
-                  <Bar dataKey="totalVendido" fill="#4f8cff" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="totalVendido" fill="var(--chart-green)" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -98,28 +104,34 @@ export default function VendasPage() {
 
           <section className="chart-card" style={{ marginTop: 20 }}>
             <h3>Produtos Mais Vendidos</h3>
-            <ResponsiveContainer width="100%" height={Math.max(220, produtosMaisVendidos.length * 42)}>
+            <ResponsiveContainer width="100%" height={Math.min(245, Math.max(180, produtosMaisVendidos.length * 30))}>
               <BarChart
                 data={produtosMaisVendidos}
                 layout="vertical"
                 margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="#2a2f3a" />
-                <XAxis type="number" stroke="#8b93a7" />
-                <YAxis type="category" dataKey="produto" stroke="#8b93a7" width={160} tick={{ fontSize: 12 }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
+                <XAxis type="number" stroke="var(--chart-axis)" />
+                <YAxis type="category" dataKey="produto" stroke="var(--chart-axis)" width={160} tick={{ fontSize: 12 }} />
                 <Tooltip
                   cursor={{ fill: 'rgba(255, 255, 255, 0.08)' }}
-                  contentStyle={{ background: '#1b1f27', border: '1px solid #2a2f3a', borderRadius: 8 }}
-                  labelStyle={{ color: '#e6e9f0' }}
+                  contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, boxShadow: '0 5px 18px rgba(23,43,58,.12)', color: 'var(--text)' }}
+                  labelStyle={{ color: 'var(--text)' }}
                   formatter={(value, nome) => [
                     nome === 'totalVendido' ? formatarMoeda(value) : value,
                     nome === 'totalVendido' ? 'Total Vendido' : 'Quantidade',
                   ]}
                 />
-                <Bar dataKey="totalVendido" fill="#3ecf8e" radius={[0, 6, 6, 0]} />
+                <Bar dataKey="totalVendido" fill="var(--chart-green-soft)" radius={[0, 6, 6, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </section>
+
+          <GraficosAnaliticos graficos={[
+            { titulo: 'Evolução mensal do faturamento', dados: vendasPorMes, tipo: 'area', formato: 'moeda', series: [{ chave: 'totalVendido', nome: 'Faturamento' }] },
+            { titulo: 'Clientes com maior volume de compras', dados: vendasPorCliente, tipo: 'barra', horizontal: true, formato: 'moeda', series: [{ chave: 'valor', nome: 'Vendido' }] },
+            { titulo: 'Faturamento por dia da semana', dados: vendasPorDia, tipo: 'barra', formato: 'moeda', series: [{ chave: 'valor', nome: 'Faturamento' }] },
+          ]} />
         </>
       )}
     </>

@@ -1,32 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Treemap, Tooltip, ResponsiveContainer } from 'recharts'
+import { AlertTriangle, X } from 'lucide-react'
 import { api } from '../api'
 import KpiCard from './KpiCard'
 import TabelaDados from './TabelaDados'
+import GraficosAnaliticos from './GraficosAnaliticos'
+import { agruparSoma } from './chartUtils'
 
 function formatarMoeda(valor) {
   return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-}
-
-const CORES_CATEGORIA = ['#4f8cff', '#3ecf8e', '#f5a623', '#a970ff', '#ff5c5c', '#22d3ee', '#f472b6', '#facc15']
-
-function CelulaTreemap({ x, y, width, height, name, index, value }) {
-  const cor = CORES_CATEGORIA[index % CORES_CATEGORIA.length]
-  return (
-    <g>
-      <rect x={x} y={y} width={width} height={height} style={{ fill: cor, stroke: '#11141a', strokeWidth: 2 }} />
-      {width > 60 && height > 28 && (
-        <text x={x + 8} y={y + 20} fill="#0d0f14" fontSize={12} fontWeight={700}>
-          {name}
-        </text>
-      )}
-      {width > 60 && height > 46 && (
-        <text x={x + 8} y={y + 38} fill="#0d0f14" fontSize={11} opacity={0.8}>
-          {value} produtos
-        </text>
-      )}
-    </g>
-  )
 }
 
 const COLUNAS = [
@@ -44,7 +25,7 @@ const COLUNAS = [
     render: (p) => (
       <span
         className="status-pill"
-        style={{ color: p.precisaReposicao ? '#ff5c5c' : '#8b93a7', borderColor: p.precisaReposicao ? '#ff5c5c' : '#2a2f3a' }}
+                style={{ color: p.precisaReposicao ? 'var(--chart-danger)' : 'var(--text-muted)', borderColor: p.precisaReposicao ? 'var(--chart-danger)' : 'var(--border)' }}
       >
         {p.precisaReposicao ? 'Repor' : 'OK'}
       </span>
@@ -58,7 +39,7 @@ const COLUNAS = [
     render: (p) => (
       <span
         className="status-pill"
-        style={{ color: p.estaAtivo ? '#3ecf8e' : '#8b93a7', borderColor: p.estaAtivo ? '#3ecf8e' : '#2a2f3a' }}
+                style={{ color: p.estaAtivo ? 'var(--accent)' : 'var(--text-muted)', borderColor: p.estaAtivo ? 'var(--accent)' : 'var(--border)' }}
       >
         {p.estaAtivo ? 'Ativo' : 'Inativo'}
       </span>
@@ -73,7 +54,7 @@ export default function EstoquePage() {
   const [porCategoria, setPorCategoria] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState(null)
-  const [somenteReposicao, setSomenteReposicao] = useState(false)
+  const [modalReposicaoAberto, setModalReposicaoAberto] = useState(false)
 
   useEffect(() => {
     Promise.all([api.produtos(), api.produtosResumo(), api.produtosPorCategoria()])
@@ -86,10 +67,28 @@ export default function EstoquePage() {
       .finally(() => setCarregando(false))
   }, [])
 
-  const produtosFiltrados = useMemo(
-    () => (somenteReposicao ? produtos.filter((p) => p.precisaReposicao) : produtos),
-    [produtos, somenteReposicao]
-  )
+  const produtosParaReposicao = useMemo(() => produtos.filter((p) => p.precisaReposicao), [produtos])
+
+  useEffect(() => {
+    if (!modalReposicaoAberto) return undefined
+    const overflowAnterior = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    function fecharComEscape(evento) {
+      if (evento.key === 'Escape') setModalReposicaoAberto(false)
+    }
+    document.addEventListener('keydown', fecharComEscape)
+    return () => {
+      document.body.style.overflow = overflowAnterior
+      document.removeEventListener('keydown', fecharComEscape)
+    }
+  }, [modalReposicaoAberto])
+  const estoquePorGrupo = agruparSoma(produtos, (p) => p.grupo, (p) => p.estoqueTotal, 'label', 'unidades').slice(0, 8)
+  const valorPorCategoria = agruparSoma(produtos, (p) => p.categoria, (p) => p.estoqueTotal * p.precoVenda, 'label', 'valor').slice(0, 8)
+  const situacaoProdutos = [
+    { label: 'Estoque adequado', valor: produtos.filter((p) => p.estaAtivo && !p.precisaReposicao).length, cor: 'var(--chart-green)' },
+    { label: 'Precisam de reposição', valor: produtos.filter((p) => p.estaAtivo && p.precisaReposicao).length, cor: 'var(--chart-danger)' },
+    { label: 'Inativos', valor: produtos.filter((p) => !p.estaAtivo).length, cor: 'var(--chart-neutral)' },
+  ].filter((item) => item.valor > 0)
 
   return (
     <>
@@ -111,39 +110,80 @@ export default function EstoquePage() {
             <KpiCard
               titulo="Necessitam Reposição"
               valor={resumo.produtosParaReposicao}
-              subtitulo={somenteReposicao ? 'Clique para ver todos' : 'Abaixo do mínimo • clique para filtrar'}
+              subtitulo="Abaixo do mínimo • clique para ver os produtos"
               tom={resumo.produtosParaReposicao > 0 ? 'alerta' : 'neutro'}
-              ativo={somenteReposicao}
-              onClick={resumo.produtosParaReposicao > 0 ? () => setSomenteReposicao((atual) => !atual) : undefined}
+              onClick={resumo.produtosParaReposicao > 0 ? () => setModalReposicaoAberto(true) : undefined}
             />
           </section>
 
-          <section className="chart-card">
-            <h3>Produtos por Categoria</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <Treemap
-                data={porCategoria.map((c) => ({ name: c.categoria, value: c.quantidade }))}
-                dataKey="value"
-                stroke="#11141a"
-                content={<CelulaTreemap />}
-              >
-                <Tooltip
-                  contentStyle={{ background: '#1b1f27', border: '1px solid #2a2f3a', borderRadius: 8 }}
-                  labelStyle={{ color: '#e6e9f0' }}
-                  formatter={(value) => [value, 'Produtos']}
-                />
-              </Treemap>
-            </ResponsiveContainer>
-          </section>
+          <GraficosAnaliticos graficos={[
+            { titulo: 'Produtos por categoria', dados: porCategoria.map((c) => ({ label: c.categoria, quantidade: c.quantidade })), tipo: 'barra', horizontal: true, altura: 180, series: [{ chave: 'quantidade', nome: 'Produtos' }] },
+          ]} />
+
+          <GraficosAnaliticos graficos={[
+            { titulo: 'Unidades em estoque por grupo', dados: estoquePorGrupo, tipo: 'barra', horizontal: true, series: [{ chave: 'unidades', nome: 'Unidades' }] },
+            { titulo: 'Valor em estoque por categoria', dados: valorPorCategoria, tipo: 'barra', horizontal: true, formato: 'moeda', series: [{ chave: 'valor', nome: 'Valor' }] },
+            { titulo: 'Situação do cadastro', dados: situacaoProdutos, tipo: 'pizza', categoria: 'label', series: [{ chave: 'valor', nome: 'Produtos' }] },
+          ]} />
 
           <TabelaDados
             titulo="Produtos"
             colunas={COLUNAS}
-            dados={produtosFiltrados}
+            dados={produtos}
             nomeArquivoCsv="estoque-produtos"
             mensagemVazia="Nenhum produto encontrado."
           />
         </>
+      )}
+
+      {modalReposicaoAberto && (
+        <div className="modal-backdrop" onClick={() => setModalReposicaoAberto(false)}>
+          <section
+            className="modal-reposicao"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-reposicao-titulo"
+            onClick={(evento) => evento.stopPropagation()}
+          >
+            <header className="modal-reposicao__cabecalho">
+              <div className="modal-reposicao__titulo-grupo">
+                <span className="modal-reposicao__icone"><AlertTriangle size={19} /></span>
+                <div>
+                  <h2 id="modal-reposicao-titulo">Produtos que precisam de reposição</h2>
+                  <p>{produtosParaReposicao.length} {produtosParaReposicao.length === 1 ? 'produto abaixo' : 'produtos abaixo'} do estoque mínimo</p>
+                </div>
+              </div>
+              <button className="modal-reposicao__fechar" type="button" onClick={() => setModalReposicaoAberto(false)} aria-label="Fechar modal">
+                <X size={19} />
+              </button>
+            </header>
+
+            <div className="modal-reposicao__conteudo">
+              <table>
+                <thead>
+                  <tr><th>Código</th><th>Produto</th><th>Categoria</th><th>Estoque atual</th><th>Mínimo</th><th>Repor ao menos</th></tr>
+                </thead>
+                <tbody>
+                  {produtosParaReposicao.map((produto) => (
+                    <tr key={produto.codigo}>
+                      <td>{produto.codigo}</td>
+                      <td className="modal-reposicao__produto">{produto.descricao}</td>
+                      <td>{produto.categoria}</td>
+                      <td>{Number(produto.estoqueTotal).toLocaleString('pt-BR')}</td>
+                      <td>{Number(produto.minimo).toLocaleString('pt-BR')}</td>
+                      <td><strong>{Math.max(0, Number(produto.minimo) - Number(produto.estoqueTotal)).toLocaleString('pt-BR')} un.</strong></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <footer className="modal-reposicao__rodape">
+              <span>Quantidade sugerida para atingir o mínimo cadastrado.</span>
+              <button type="button" className="modal-reposicao__botao" onClick={() => setModalReposicaoAberto(false)}>Entendi</button>
+            </footer>
+          </section>
+        </div>
       )}
     </>
   )

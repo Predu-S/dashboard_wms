@@ -17,7 +17,7 @@ const COLUNAS = [
             className="barra-ocupacao__preenchida"
             style={{
               width: `${item.percentualOcupacao}%`,
-              background: item.percentualOcupacao >= 90 ? '#ff5c5c' : '#4f8cff',
+              background: item.percentualOcupacao >= 90 ? 'var(--chart-danger)' : 'var(--chart-green)',
             }}
           />
         </div>

@@ -1,0 +1,18 @@
+# Local secrets and environment files
+.env
+.env.*
+!.env.example
+!.env.*.example
+**/appsettings.Local.json
+**/appsettings.*.Local.json
+**/secrets.json
+
+# Generated files
+**/bin/
+**/obj/
+**/node_modules/
+**/dist/
+**/.vs/
+*.user
+*.suo
+*.log

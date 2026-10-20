@@ -39,8 +39,11 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // --- Autenticação JWT ---
-var chaveSecreta = builder.Configuration["Jwt:SecretKey"]
-    ?? throw new InvalidOperationException("Jwt:SecretKey não configurada.");
+var chaveSecreta = builder.Configuration["Jwt:SecretKey"];
+if (string.IsNullOrWhiteSpace(chaveSecreta) || Encoding.UTF8.GetByteCount(chaveSecreta) < 32)
+{
+    throw new InvalidOperationException("Configure Jwt:SecretKey com pelo menos 32 bytes usando um segredo fora dos arquivos versionados.");
+}
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -60,8 +63,11 @@ builder.Services
 
 builder.Services.AddAuthorization();
 
-var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
-    ?? new[] { "http://localhost:5173" };
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+if (builder.Environment.IsDevelopment() && allowedOrigins.Length == 0)
+{
+    allowedOrigins = new[] { "http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5181", "http://127.0.0.1:5181" };
+}
 
 builder.Services.AddCors(options =>
 {
@@ -85,5 +91,6 @@ app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapGet("/health", () => Results.Ok(new { status = "ok" })).AllowAnonymous();
 
 app.Run();

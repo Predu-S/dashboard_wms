@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Warehouse, Package, ShoppingCart, Wallet, Truck, FileText, Boxes, ArrowRight } from 'lucide-react'
 import { api } from '../api'
 import { usePeriodo } from '../context/PeriodoContext'
+import GraficosAnaliticos from './GraficosAnaliticos'
 
 function formatarMoeda(valor) {
   return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -17,6 +18,10 @@ export default function VisaoGeralPage() {
   const [financeiro, setFinanceiro] = useState(null)
   const [compras, setCompras] = useState(null)
   const [fiscal, setFiscal] = useState(null)
+  const [vendasPorVendedor, setVendasPorVendedor] = useState([])
+  const [comprasPorFornecedor, setComprasPorFornecedor] = useState([])
+  const [produtosPorCategoria, setProdutosPorCategoria] = useState([])
+  const [ocupacaoPorDeposito, setOcupacaoPorDeposito] = useState([])
   const [carregando, setCarregando] = useState(true)
 
   useEffect(() => {
@@ -29,8 +34,11 @@ export default function VisaoGeralPage() {
       api.financeiroResumo(),
       api.comprasResumo(periodo),
       api.fiscalResumo(periodo),
+      api.vendasPorVendedor(periodo),
+      api.comprasPorFornecedor(periodo),
+      api.produtosPorCategoria(),
     ])
-      .then(([produtosResp, ocupacaoResp, pendenciasResp, vendasResp, financeiroResp, comprasResp, fiscalResp]) => {
+      .then(([produtosResp, ocupacaoResp, pendenciasResp, vendasResp, financeiroResp, comprasResp, fiscalResp, vendedorResp, fornecedorResp, categoriaResp]) => {
         const capacidadeTotal = ocupacaoResp.reduce((s, d) => s + d.capacidadeTotal, 0)
         const ocupadoTotal = ocupacaoResp.reduce((s, d) => s + d.quantidadeOcupada, 0)
         const percentual = capacidadeTotal > 0 ? Math.round((ocupadoTotal / capacidadeTotal) * 1000) / 10 : 0
@@ -42,6 +50,13 @@ export default function VisaoGeralPage() {
         setFinanceiro(financeiroResp)
         setCompras(comprasResp)
         setFiscal(fiscalResp)
+        setVendasPorVendedor(vendedorResp)
+        setComprasPorFornecedor(fornecedorResp)
+        setProdutosPorCategoria(categoriaResp)
+        setOcupacaoPorDeposito(ocupacaoResp.map((item) => ({
+          label: `Depósito ${item.deposito}`,
+          percentual: item.capacidadeTotal > 0 ? Math.round((item.quantidadeOcupada / item.capacidadeTotal) * 1000) / 10 : 0,
+        })))
       })
       .finally(() => setCarregando(false))
   }, [periodo.dataInicio, periodo.dataFim])
@@ -56,9 +71,10 @@ export default function VisaoGeralPage() {
       {carregando && <p>Carregando dados...</p>}
 
       {!carregando && (
+        <>
         <section className="visao-geral-grid">
           <Link to="/estoque" className="modulo-card">
-            <div className="modulo-card__icone" style={{ background: '#3ecf8e22', color: '#3ecf8e' }}>
+            <div className="modulo-card__icone" style={{ background: '#e7f3ee', color: '#4c9678' }}>
               <Boxes size={22} />
             </div>
             <div className="modulo-card__texto">
@@ -69,7 +85,7 @@ export default function VisaoGeralPage() {
           </Link>
 
           <Link to="/ocupacao" className="modulo-card">
-            <div className="modulo-card__icone" style={{ background: '#4f8cff22', color: '#4f8cff' }}>
+            <div className="modulo-card__icone" style={{ background: '#e9f1f8', color: '#5c8db7' }}>
               <Warehouse size={22} />
             </div>
             <div className="modulo-card__texto">
@@ -80,7 +96,7 @@ export default function VisaoGeralPage() {
           </Link>
 
           <Link to="/ocupacao/pendencias" className="modulo-card">
-            <div className="modulo-card__icone" style={{ background: '#ff5c5c22', color: '#ff5c5c' }}>
+            <div className="modulo-card__icone" style={{ background: '#f8eae8', color: '#bc6a61' }}>
               <Package size={22} />
             </div>
             <div className="modulo-card__texto">
@@ -91,7 +107,7 @@ export default function VisaoGeralPage() {
           </Link>
 
           <Link to="/vendas" className="modulo-card">
-            <div className="modulo-card__icone" style={{ background: '#3ecf8e22', color: '#3ecf8e' }}>
+            <div className="modulo-card__icone" style={{ background: '#e7f3ee', color: '#4c9678' }}>
               <ShoppingCart size={22} />
             </div>
             <div className="modulo-card__texto">
@@ -102,7 +118,7 @@ export default function VisaoGeralPage() {
           </Link>
 
           <Link to="/financeiro" className="modulo-card">
-            <div className="modulo-card__icone" style={{ background: '#f5a62322', color: '#f5a623' }}>
+            <div className="modulo-card__icone" style={{ background: '#f7f0e3', color: '#b2894c' }}>
               <Wallet size={22} />
             </div>
             <div className="modulo-card__texto">
@@ -115,7 +131,7 @@ export default function VisaoGeralPage() {
           </Link>
 
           <Link to="/compras" className="modulo-card">
-            <div className="modulo-card__icone" style={{ background: '#a970ff22', color: '#a970ff' }}>
+            <div className="modulo-card__icone" style={{ background: '#efebf6', color: '#8874ac' }}>
               <Truck size={22} />
             </div>
             <div className="modulo-card__texto">
@@ -126,7 +142,7 @@ export default function VisaoGeralPage() {
           </Link>
 
           <Link to="/fiscal" className="modulo-card">
-            <div className="modulo-card__icone" style={{ background: '#4f8cff22', color: '#4f8cff' }}>
+            <div className="modulo-card__icone" style={{ background: '#e9f1f8', color: '#5c8db7' }}>
               <FileText size={22} />
             </div>
             <div className="modulo-card__texto">
@@ -136,6 +152,13 @@ export default function VisaoGeralPage() {
             <ArrowRight size={18} className="modulo-card__seta" />
           </Link>
         </section>
+        <GraficosAnaliticos graficos={[
+          { titulo: 'Vendas por vendedor', dados: vendasPorVendedor.slice(0, 8).map((item) => ({ label: item.vendedor, valor: item.totalVendido })), tipo: 'barra', horizontal: true, formato: 'moeda', series: [{ chave: 'valor', nome: 'Vendas' }] },
+          { titulo: 'Compras por fornecedor', dados: comprasPorFornecedor.slice(0, 8).map((item) => ({ label: item.fornecedor, valor: item.totalComprado })), tipo: 'barra', horizontal: true, formato: 'moeda', series: [{ chave: 'valor', nome: 'Compras' }] },
+          { titulo: 'Produtos por categoria', dados: produtosPorCategoria.map((item) => ({ label: item.categoria, valor: item.quantidade })), tipo: 'pizza', series: [{ chave: 'valor', nome: 'Produtos' }] },
+          { titulo: 'Ocupação por depósito', dados: ocupacaoPorDeposito, tipo: 'barra', formato: 'percentual', series: [{ chave: 'percentual', nome: 'Ocupação', corCondicional: { campo: 'percentual', limite: 90, acima: 'var(--chart-danger)', abaixo: 'var(--chart-green)' } }] },
+        ]} />
+        </>
       )}
     </>
   )

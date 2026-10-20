@@ -1,8 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import {
   Search,
   Bell,
+  Database,
+  Sun,
+  Moon,
   UserCircle,
   LogOut,
   Home,
@@ -17,6 +21,10 @@ import {
   BarChart3,
 } from 'lucide-react'
 import { obterUsuario } from '../api'
+import FiltroData from './FiltroData'
+import { usePeriodo } from '../context/PeriodoContext'
+
+const USANDO_DADOS_FICTICIOS = import.meta.env.VITE_USAR_DADOS_FICTICIOS !== 'false'
 
 const ITENS_BUSCA = [
   { rotulo: 'Visão Geral', rota: '/', tipo: 'Painel', icone: Home },
@@ -47,9 +55,11 @@ function normalizar(texto) {
     .replace(/[\u0300-\u036f]/g, '')
 }
 
-export default function Topbar({ onLogout }) {
+export default function Topbar({ onLogout, tema = 'claro', onAlternarTema }) {
   const usuario = obterUsuario() || 'Usuário'
   const navigate = useNavigate()
+  const location = useLocation()
+  const { atalho, setAtalho, dataInicioCustom, setDataInicioCustom, dataFimCustom, setDataFimCustom } = usePeriodo()
   const containerRef = useRef(null)
 
   const [consulta, setConsulta] = useState('')
@@ -79,7 +89,7 @@ export default function Topbar({ onLogout }) {
   }, [])
 
   function irPara(rota) {
-    navigate(rota)
+    navigate(rota, { viewTransition: true })
     setAberto(false)
     setConsulta('')
   }
@@ -116,6 +126,34 @@ export default function Topbar({ onLogout }) {
       </div>
 
       <div className="topbar__acoes">
+        {location.pathname !== '/configuracoes' && (
+          <div className="topbar__periodo">
+            {USANDO_DADOS_FICTICIOS && (
+              <span className="badge-dados-ficticios" title="Este ambiente está configurado para usar dados demonstrativos">
+                <Database size={13} /> Dados fictícios
+              </span>
+            )}
+            <FiltroData
+              className="filtro-barra--topbar"
+              atalho={atalho}
+              onSelecionarAtalho={setAtalho}
+              dataInicio={dataInicioCustom}
+              dataFim={dataFimCustom}
+              onSelecionarDataInicio={setDataInicioCustom}
+              onSelecionarDataFim={setDataFimCustom}
+            />
+          </div>
+        )}
+        <button
+          className="topbar__icone-btn topbar__tema-btn"
+          type="button"
+          title={tema === 'claro' ? 'Modo claro ativo. Ativar modo escuro' : 'Modo escuro ativo. Ativar modo claro'}
+          aria-label={tema === 'claro' ? 'Modo claro ativo. Ativar modo escuro' : 'Modo escuro ativo. Ativar modo claro'}
+          aria-pressed={tema === 'escuro'}
+          onClick={onAlternarTema}
+        >
+          {tema === 'claro' ? <Sun size={17} /> : <Moon size={17} />}
+        </button>
         <button className="topbar__icone-btn" title="Notificações">
           <Bell size={18} />
         </button>

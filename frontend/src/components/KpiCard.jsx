@@ -5,6 +5,12 @@ export default function KpiCard({ titulo, valor, subtitulo, tom = 'neutro', ativ
     <div
       className={`kpi-card kpi-card--${tom} ${clicavel ? 'kpi-card--clicavel' : ''} ${ativo ? 'kpi-card--ativo' : ''}`}
       onClick={onClick}
+      onKeyDown={clicavel ? (evento) => {
+        if (evento.key === 'Enter' || evento.key === ' ') {
+          evento.preventDefault()
+          onClick()
+        }
+      } : undefined}
       role={clicavel ? 'button' : undefined}
       tabIndex={clicavel ? 0 : undefined}
     >

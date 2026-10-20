@@ -49,9 +49,9 @@ export function calcularPeriodo(atalho, dataInicioCustom, dataFimCustom) {
   }
 }
 
-export default function FiltroData({ atalho, onSelecionarAtalho, dataInicio, dataFim, onSelecionarDataInicio, onSelecionarDataFim }) {
+export default function FiltroData({ atalho, onSelecionarAtalho, dataInicio, dataFim, onSelecionarDataInicio, onSelecionarDataFim, className = '' }) {
   return (
-    <div className="filtro-barra">
+    <div className={`filtro-barra ${className}`.trim()}>
       <div className="filtro-barra__item">
         <Calendar size={14} />
         <label htmlFor="filtro-periodo">Período</label>

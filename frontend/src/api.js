@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+const API_BASE_URL = import.meta.env.DEV ? '' : (import.meta.env.VITE_API_URL || '')
 const CHAVE_TOKEN = 'deposito_bi_token'
 const CHAVE_USUARIO = 'deposito_bi_usuario'
 

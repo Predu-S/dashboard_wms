@@ -2,8 +2,7 @@ import { useState } from 'react'
 import { Outlet, NavLink, useLocation } from 'react-router-dom'
 import { Home, Boxes, Warehouse, Package, ShoppingCart, Wallet, Truck, FileText, Settings, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react'
 import Topbar from './Topbar'
-import FiltroData from './FiltroData'
-import { PeriodoProvider, usePeriodo } from '../context/PeriodoContext'
+import { PeriodoProvider } from '../context/PeriodoContext'
 
 const ITENS_MENU = [
   { rota: '/', rotulo: 'Visão Geral', icone: Home, fim: true },
@@ -23,21 +22,6 @@ const ITENS_MENU = [
   { rota: '/configuracoes', rotulo: 'Configurações', icone: Settings },
 ]
 
-function FiltroDataGlobal() {
-  const { atalho, setAtalho, dataInicioCustom, setDataInicioCustom, dataFimCustom, setDataFimCustom } = usePeriodo()
-
-  return (
-    <FiltroData
-      atalho={atalho}
-      onSelecionarAtalho={setAtalho}
-      dataInicio={dataInicioCustom}
-      dataFim={dataFimCustom}
-      onSelecionarDataInicio={setDataInicioCustom}
-      onSelecionarDataFim={setDataFimCustom}
-    />
-  )
-}
-
 function ItemMenu({ item, sidebarRecolhida }) {
   const location = useLocation()
   const temFilhoAtivo = item.filhos?.some((f) => location.pathname === f.rota)
@@ -45,7 +29,7 @@ function ItemMenu({ item, sidebarRecolhida }) {
 
   if (!item.filhos) {
     return (
-      <NavLink to={item.rota} end={item.fim} title={item.rotulo} className={({ isActive }) => (isActive ? 'ativo' : '')}>
+      <NavLink to={item.rota} end={item.fim} title={item.rotulo} viewTransition className={({ isActive }) => (isActive ? 'ativo' : '')}>
         <item.icone size={16} /> {!sidebarRecolhida && item.rotulo}
       </NavLink>
     )
@@ -54,7 +38,7 @@ function ItemMenu({ item, sidebarRecolhida }) {
   return (
     <div className="sidebar__grupo">
       <div className="sidebar__grupo-cabecalho">
-        <NavLink to={item.rota} title={item.rotulo} className={({ isActive }) => (isActive ? 'ativo' : '')}>
+        <NavLink to={item.rota} title={item.rotulo} viewTransition className={({ isActive }) => (isActive ? 'ativo' : '')}>
           <item.icone size={16} /> {!sidebarRecolhida && item.rotulo}
         </NavLink>
         {!sidebarRecolhida && (
@@ -71,7 +55,7 @@ function ItemMenu({ item, sidebarRecolhida }) {
       {!sidebarRecolhida && aberto && (
         <div className="sidebar__submenu">
           {item.filhos.map((filho) => (
-            <NavLink key={filho.rota} to={filho.rota} title={filho.rotulo} className={({ isActive }) => (isActive ? 'ativo' : '')}>
+            <NavLink key={filho.rota} to={filho.rota} title={filho.rotulo} viewTransition className={({ isActive }) => (isActive ? 'ativo' : '')}>
               <filho.icone size={14} /> {filho.rotulo}
             </NavLink>
           ))}
@@ -83,10 +67,30 @@ function ItemMenu({ item, sidebarRecolhida }) {
 
 export default function Layout({ onLogout }) {
   const [sidebarRecolhida, setSidebarRecolhida] = useState(false)
+  const [tema, setTema] = useState(() => {
+    try {
+      return localStorage.getItem('dashboard-tema') === 'escuro' ? 'escuro' : 'claro'
+    } catch {
+      return 'claro'
+    }
+  })
+  const location = useLocation()
+
+  function alternarTema() {
+    setTema((atual) => {
+      const proximo = atual === 'claro' ? 'escuro' : 'claro'
+      try {
+        localStorage.setItem('dashboard-tema', proximo)
+      } catch {
+        // O tema continua funcionando durante a sessão se o armazenamento estiver indisponível.
+      }
+      return proximo
+    })
+  }
 
   return (
     <PeriodoProvider>
-      <div className="app">
+      <div className="app" data-theme={tema}>
         <aside className={`sidebar ${sidebarRecolhida ? 'sidebar--recolhida' : ''}`}>
           <div className="sidebar__topo">
             {!sidebarRecolhida && <div className="sidebar__logo">Dashboard Siserp</div>}
@@ -106,9 +110,8 @@ export default function Layout({ onLogout }) {
         </aside>
 
         <div className="area-principal">
-          <Topbar onLogout={onLogout} />
-          <main className="conteudo">
-            <FiltroDataGlobal />
+          <Topbar onLogout={onLogout} tema={tema} onAlternarTema={alternarTema} />
+          <main className="conteudo" key={location.pathname}>
             <Outlet />
           </main>
         </div>
