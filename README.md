@@ -17,7 +17,7 @@ Crie um Web Service Docker apontando para `backend/DepositoApi/Dockerfile`, com 
 | `Demo__Username` | `demo` |
 | `Demo__Password` | `demo` |
 | `Jwt__SecretKey` | segredo aleatório com pelo menos 32 bytes, gerado e guardado pelo provedor |
-| `Cors__AllowedOrigins__0` | origem pública exata do site no Netlify, por exemplo `https://seu-site.netlify.app` |
+| `Cors__AllowedOrigins__0` | `https://dashboardsiserp.netlify.app` |
 
 O serviço oferece `GET /health` para verificação de disponibilidade. O modo de demonstração só aceita o login configurado quando os dados fictícios estão ativos. As credenciais `demo` são públicas por definição e só devem ser usadas com dados fictícios.
 
@@ -62,3 +62,4 @@ Para testar o site de produção localmente, copie `frontend/.env.example` para 
 - Este projeto ainda não declara uma licença de código aberto. Até que uma licença seja adicionada, não presuma que o código pode ser reutilizado por terceiros.
 
 Se uma chave ou senha que já existiu no projeto tiver sido publicada ou enviada a um repositório remoto, revogue-a/rotacione-a no serviço correspondente. Remover o valor do arquivo atual não remove versões anteriores do histórico.
+
