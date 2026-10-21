@@ -60,7 +60,7 @@ export default function App() {
       return (
         <div className="login-pagina">
           <section className="demo-abertura" role="status" aria-live="polite">
-            <span className="demo-abertura__icone">S</span>
+            <span className="demo-abertura__icone">D</span>
             <h1>Depósito BI</h1>
             <p>{statusDemo === 'carregando' ? 'Preparando a demonstração…' : statusDemo || 'Conectando ao ambiente de demonstração…'}</p>
             {statusDemo && statusDemo !== 'carregando' && (

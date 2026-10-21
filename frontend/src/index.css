@@ -34,7 +34,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .sidebar__topo { display: flex; align-items: center; justify-content: space-between; min-height: 40px; margin: 0 5px 35px; }
 .sidebar--recolhida .sidebar__topo { justify-content: center; }
 .sidebar__logo { display: flex; align-items: center; gap: 10px; color: #fff; font-family: Manrope, sans-serif; font-size: 16px; font-weight: 800; letter-spacing: -.45px; white-space: nowrap; }
-.sidebar__logo::before { content: 'S'; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 10px; background: #0e8c83; color: white; font-size: 16px; }
+.sidebar__logo::before { content: 'D'; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 10px; background: #0e8c83; color: white; font-size: 16px; }
 .sidebar__toggle { display: flex; align-items: center; justify-content: center; width: 29px; height: 29px; color: #a9c0ca; background: #1b394a; border: 1px solid #2b4858; border-radius: 8px; cursor: pointer; flex-shrink: 0; }
 .sidebar__toggle:hover { color: white; background: #24495a; }
 .sidebar nav { display: flex; flex-direction: column; gap: 5px; }
@@ -198,7 +198,7 @@ tbody tr:hover { background: #f8fbfa; }
 
 .login-pagina { position: relative; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; overflow: hidden; background: radial-gradient(ellipse at 15% 15%, #d8ece8 0, transparent 34%), radial-gradient(ellipse at 85% 85%, #dbe7ed 0, transparent 36%), #f3f6f8; }
 .login-card { position: relative; width: min(100%, 390px); background: #fff; border: 1px solid #e1e9eb; border-radius: 16px; padding: 36px 34px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 20px 60px rgb(25 52 68 / 12%); }
-.login-card::before { content: 'S'; display: grid; place-items: center; width: 46px; height: 46px; margin: 0 auto 5px; border-radius: 14px; background: var(--accent); color: white; font: 800 22px Manrope, sans-serif; box-shadow: 0 8px 18px rgb(8 127 120 / 20%); }
+.login-card::before { content: 'D'; display: grid; place-items: center; width: 46px; height: 46px; margin: 0 auto 5px; border-radius: 14px; background: var(--accent); color: white; font: 800 22px Manrope, sans-serif; box-shadow: 0 8px 18px rgb(8 127 120 / 20%); }
 .login-card__titulo { margin: 0; font: 800 23px Manrope, sans-serif; letter-spacing: -.5px; color: #193344; text-align: center; }
 .login-card__subtitulo { margin: -5px 0 9px; font-size: 13px; color: var(--text-muted); text-align: center; }
 .demo-abertura { width: min(100%, 340px); display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 30px 26px; border: 1px solid #e1e9e3; border-radius: 16px; background: #fff; box-shadow: 0 20px 60px rgb(25 52 68 / 10%); text-align: center; }
