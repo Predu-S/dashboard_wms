@@ -15,7 +15,7 @@ export default function LoginPage({ onLoginSucesso }) {
     try {
       const resposta = await api.login(
         import.meta.env.VITE_DEMO_USERNAME || 'demo',
-        import.meta.env.VITE_DEMO_PASSWORD || 'demo'
+        'demo'
       )
       salvarToken(resposta.token)
       salvarUsuario(resposta.usuario)
@@ -87,3 +87,4 @@ export default function LoginPage({ onLoginSucesso }) {
     </div>
   )
 }
+

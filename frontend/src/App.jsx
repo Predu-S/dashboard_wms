@@ -36,7 +36,7 @@ export default function App() {
     setStatusDemo('carregando')
     api.login(
       import.meta.env.VITE_DEMO_USERNAME || 'demo',
-      import.meta.env.VITE_DEMO_PASSWORD || 'demo'
+      'demo'
     ).then((resposta) => {
       if (!ativo) return
       salvarToken(resposta.token)

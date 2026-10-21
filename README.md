@@ -30,9 +30,8 @@ O `netlify.toml` já configura o build, a publicação de `frontend/dist`, o fal
 | `VITE_API_URL` | URL HTTPS pública da API no Render, sem barra no final |
 | `VITE_DEMO_MODE` | `true` |
 | `VITE_DEMO_USERNAME` | mesmo valor de `Demo__Username` na API |
-| `VITE_DEMO_PASSWORD` | mesmo valor de `Demo__Password` na API |
 
-As variáveis `VITE_*` são incluídas no JavaScript público do site. Não coloque nelas chaves privadas, tokens ou credenciais de bancos de dados. Depois de definir as variáveis, faça um novo deploy para que o Vite as incorpore ao build.
+O frontend usa a senha pública `demo` para entrar na demonstração; mantenha `Demo__Password=demo` no Render e remova qualquer variável `VITE_DEMO_PASSWORD` do Netlify. As variáveis `VITE_*` são incluídas no JavaScript público do site. Não coloque nelas chaves privadas, tokens ou credenciais de bancos de dados. Depois de definir as variáveis, faça um novo deploy para que o Vite as incorpore ao build.
 
 ## Desenvolvimento local
 
