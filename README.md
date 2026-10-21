@@ -13,7 +13,7 @@ Crie um Web Service Docker apontando para `backend/DepositoApi/Dockerfile`, com 
 | Variável | Valor |
 | --- | --- |
 | `UsarDadosFicticios` | `true` |
-| `Demo__Enabled` | `true` |
+| `Demo__Enabled` | `true` (também habilitado por padrão em `appsettings.json`) |
 | `Demo__Username` | `demo` |
 | `Demo__Password` | `demo` |
 | `Jwt__SecretKey` | segredo aleatório com pelo menos 32 bytes, gerado e guardado pelo provedor |
