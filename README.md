@@ -17,7 +17,7 @@ Crie um Web Service Docker apontando para `backend/DepositoApi/Dockerfile`, com 
 | `Demo__Username` | `demo` |
 | `Demo__Password` | `demo` |
 | `Jwt__SecretKey` | segredo aleatório com pelo menos 32 bytes, gerado e guardado pelo provedor |
-| `Cors__AllowedOrigins__0` | `https://dashboardsiserp.netlify.app` |
+| `Cors__AllowedOrigins__0` | `https://projectdemo-dashboard.netlify.app` |
 
 O serviço oferece `GET /health` para verificação de disponibilidade. O modo de demonstração só aceita o login configurado quando os dados fictícios estão ativos. As credenciais `demo` são públicas por definição e só devem ser usadas com dados fictícios.
 

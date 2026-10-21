@@ -128,7 +128,7 @@ export default function Layout({ onLogout }) {
         )}
         <aside className={`sidebar ${sidebarRecolhida ? 'sidebar--recolhida' : ''} ${menuMobileAberto ? 'sidebar--mobile-aberta' : ''}`}>
           <div className="sidebar__topo">
-            {!sidebarRecolhida && <div className="sidebar__logo">Dashboard Siserp</div>}
+            {!sidebarRecolhida && <div className="sidebar__logo">Dashboard Demo</div>}
             <button
               className="sidebar__toggle"
               onClick={() => {
