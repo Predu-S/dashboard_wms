@@ -28,7 +28,7 @@ function TooltipDashboard({ active, payload, label, formato }) {
   )
 }
 
-function Grafico({ titulo, dados = [], tipo = 'barra', categoria = 'label', series = [], formato = 'numero', horizontal = false, altura = 195, empilhado = false }) {
+function Grafico({ titulo, dados = [], tipo = 'barra', categoria = 'label', series = [], formato = 'numero', horizontal = false, altura = 195, empilhado = false, larguraCompleta = false }) {
   const dadosValidos = dados.filter((item) => series.some((serie) => Number.isFinite(Number(item[serie.chave]))))
   const estiloEixo = { stroke: 'var(--chart-axis)', tick: { fontSize: 11, fill: 'var(--chart-axis)' }, tickLine: false }
   const eixoCategoria = horizontal
@@ -39,7 +39,7 @@ function Grafico({ titulo, dados = [], tipo = 'barra', categoria = 'label', seri
     : <YAxis type="number" width={42} {...estiloEixo} axisLine={false} />
 
   return (
-    <article className="chart-card grafico-analitico">
+    <article className={`chart-card grafico-analitico ${larguraCompleta ? 'grafico-analitico--largura-completa' : ''}`}>
       <div className="grafico-analitico__cabecalho">
         <h3>{titulo}</h3>
         <span>{dadosValidos.length} {dadosValidos.length === 1 ? 'categoria' : 'categorias'}</span>
@@ -72,9 +72,10 @@ function Grafico({ titulo, dados = [], tipo = 'barra', categoria = 'label', seri
                   {series.length > 1 && <Legend verticalAlign="top" height={24} iconType="circle" wrapperStyle={{ fontSize: 10, color: 'var(--chart-axis)' }} />}
                   {series.map((serie, index) => (
                     <Bar key={serie.chave} dataKey={serie.chave} name={serie.nome} fill={serie.cor || CORES[index % CORES.length]} radius={horizontal ? [0, 5, 5, 0] : [5, 5, 0, 0]} maxBarSize={32} stackId={empilhado ? 'total' : undefined}>
-                      {serie.corCondicional && dadosValidos.map((item, itemIndex) => {
-                        const { campo, limite, acima, abaixo } = serie.corCondicional
-                        return <Cell key={`${item[categoria]}-${itemIndex}`} fill={Number(item[campo]) >= limite ? acima : abaixo} />
+                      {(serie.corCondicional || dadosValidos.some((item) => item.cor)) && dadosValidos.map((item, itemIndex) => {
+                        const { campo, limite, acima, abaixo } = serie.corCondicional || {}
+                        const cor = campo ? (Number(item[campo]) >= limite ? acima : abaixo) : item.cor
+                        return <Cell key={`${item[categoria]}-${itemIndex}`} fill={cor || serie.cor || CORES[index % CORES.length]} />
                       })}
                     </Bar>
                   ))}

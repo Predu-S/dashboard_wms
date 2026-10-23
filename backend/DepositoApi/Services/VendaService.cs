@@ -141,13 +141,26 @@ public class VendaService : IVendaService
 /// <summary>Dados fictícios, usados enquanto UsarDadosFicticios estiver true.</summary>
 public class VendaServiceMock : IVendaService
 {
-    private readonly List<Venda> _vendas = new()
+    private readonly List<Venda> _vendas;
+
+    public VendaServiceMock()
     {
-        new() { Cliente = "Mercado Bom Preço", Vendedor = "Carlos Souza", Valor = 4200m, Data = DateTime.Today.AddDays(-2), NumPedido = "1001" },
-        new() { Cliente = "Distribuidora Sertão", Vendedor = "Ana Lima", Valor = 8900m, Data = DateTime.Today.AddDays(-3), NumPedido = "1002" },
-        new() { Cliente = "Comercial Silva", Vendedor = "Carlos Souza", Valor = 1500m, Data = DateTime.Today.AddDays(-5), NumPedido = "1003" },
-        new() { Cliente = "Atacadão Norte", Vendedor = "Ana Lima", Valor = 12300m, Data = DateTime.Today.AddDays(-7), NumPedido = "1004" },
-    };
+        var clientes = new[] { "Mercado Bom Preço", "Distribuidora Sertão", "Comercial Silva", "Atacadão Norte", "Empório Central", "Mercantil Fortaleza", "Supermercado Pague Menos", "Casa do Nordeste", "Armazém Brasil", "Rede Econômica" };
+        var vendedores = new[] { "Carlos Souza", "Ana Lima", "Marcos Alves", "Juliana Costa", "Rafael Mendes" };
+        var random = new Random(20261022);
+        var pedido = 1001;
+        _vendas = Enumerable.Range(0, 90)
+            .SelectMany(dia => Enumerable.Range(0, 1 + (dia % 3 == 0 ? 2 : dia % 2))
+                .Select(_ => new Venda
+                {
+                    Cliente = clientes[random.Next(clientes.Length)],
+                    Vendedor = vendedores[random.Next(vendedores.Length)],
+                    Valor = random.Next(450, 24000) + random.Next(0, 100) / 100m,
+                    Data = DateTime.Today.AddDays(-dia).AddHours(8 + random.Next(0, 10)),
+                    NumPedido = (pedido++).ToString(),
+                }))
+            .ToList();
+    }
 
     private IEnumerable<Venda> Filtrar(DateTime? dataInicio, DateTime? dataFim) =>
         _vendas.Where(v =>

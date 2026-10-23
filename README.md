@@ -61,4 +61,3 @@ Para testar o site de produção localmente, copie `frontend/.env.example` para 
 - Este projeto ainda não declara uma licença de código aberto. Até que uma licença seja adicionada, não presuma que o código pode ser reutilizado por terceiros.
 
 Se uma chave ou senha que já existiu no projeto tiver sido publicada ou enviada a um repositório remoto, revogue-a/rotacione-a no serviço correspondente. Remover o valor do arquivo atual não remove versões anteriores do histórico.
-

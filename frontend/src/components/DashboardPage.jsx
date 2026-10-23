@@ -11,7 +11,7 @@ export default function DashboardPage() {
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState(null)
 
-  const [depositoSelecionado, setDepositoSelecionado] = useState('todos')
+  const [depositosSelecionados, setDepositosSelecionados] = useState([])
   const [situacaoFiltro, setSituacaoFiltro] = useState('todas')
 
   useEffect(() => {
@@ -30,13 +30,13 @@ export default function DashboardPage() {
   )
 
   const resumoFiltrado = useMemo(
-    () => (depositoSelecionado === 'todos' ? resumo : resumo.filter((d) => d.deposito === depositoSelecionado)),
-    [resumo, depositoSelecionado]
+    () => (depositosSelecionados.length === 0 ? resumo : resumo.filter((d) => depositosSelecionados.includes(d.deposito))),
+    [resumo, depositosSelecionados]
   )
 
   const detalhadoPorDeposito = useMemo(
-    () => (depositoSelecionado === 'todos' ? detalhado : detalhado.filter((d) => d.deposito === depositoSelecionado)),
-    [detalhado, depositoSelecionado]
+    () => (depositosSelecionados.length === 0 ? detalhado : detalhado.filter((d) => depositosSelecionados.includes(d.deposito))),
+    [detalhado, depositosSelecionados]
   )
 
   const detalhadoFiltrado = useMemo(() => {
@@ -59,15 +59,15 @@ export default function DashboardPage() {
       <header className="conteudo__header">
         <h1>{titulo || "Ocupação"}</h1>
         <span className="conteudo__data">
-          {depositoSelecionado === 'todos' ? 'Consolidado • Todos os Depósitos' : `Depósito ${depositoSelecionado}`}
+          {depositosSelecionados.length === 0 ? 'Consolidado • Todos os Depósitos' : depositosSelecionados.length === 1 ? `Depósito ${depositosSelecionados[0]}` : `${depositosSelecionados.length} depósitos selecionados`}
         </span>
       </header>
 
       {!carregando && !erro && (
         <FiltroBarra
           depositos={depositosDisponiveis}
-          depositoSelecionado={depositoSelecionado}
-          onSelecionarDeposito={setDepositoSelecionado}
+          depositosSelecionados={depositosSelecionados}
+          onSelecionarDeposito={setDepositosSelecionados}
           situacaoSelecionada={situacaoFiltro}
           onSelecionarSituacao={setSituacaoFiltro}
         />

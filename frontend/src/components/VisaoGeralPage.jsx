@@ -4,6 +4,7 @@ import { Warehouse, Package, ShoppingCart, Wallet, Truck, FileText, Boxes, Arrow
 import { api } from '../api'
 import { usePeriodo } from '../context/PeriodoContext'
 import GraficosAnaliticos from './GraficosAnaliticos'
+import MiniTelas from './MiniTelas'
 
 function formatarMoeda(valor) {
   return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -22,7 +23,9 @@ export default function VisaoGeralPage() {
   const [comprasPorFornecedor, setComprasPorFornecedor] = useState([])
   const [produtosPorCategoria, setProdutosPorCategoria] = useState([])
   const [ocupacaoPorDeposito, setOcupacaoPorDeposito] = useState([])
+  const [capacidadePorDeposito, setCapacidadePorDeposito] = useState([])
   const [carregando, setCarregando] = useState(true)
+  const [miniTela, setMiniTela] = useState('comercial')
 
   useEffect(() => {
     setCarregando(true)
@@ -56,6 +59,11 @@ export default function VisaoGeralPage() {
         setOcupacaoPorDeposito(ocupacaoResp.map((item) => ({
           label: `Depósito ${item.deposito}`,
           percentual: item.capacidadeTotal > 0 ? Math.round((item.quantidadeOcupada / item.capacidadeTotal) * 1000) / 10 : 0,
+        })))
+        setCapacidadePorDeposito(ocupacaoResp.map((item) => ({
+          label: `Depósito ${item.deposito}`,
+          ocupadas: item.quantidadeOcupada,
+          livres: Math.max(0, item.capacidadeTotal - item.quantidadeOcupada),
         })))
       })
       .finally(() => setCarregando(false))
@@ -152,12 +160,35 @@ export default function VisaoGeralPage() {
             <ArrowRight size={18} className="modulo-card__seta" />
           </Link>
         </section>
-        <GraficosAnaliticos graficos={[
-          { titulo: 'Vendas por vendedor', dados: vendasPorVendedor.slice(0, 8).map((item) => ({ label: item.vendedor, valor: item.totalVendido })), tipo: 'barra', horizontal: true, formato: 'moeda', series: [{ chave: 'valor', nome: 'Vendas' }] },
-          { titulo: 'Compras por fornecedor', dados: comprasPorFornecedor.slice(0, 8).map((item) => ({ label: item.fornecedor, valor: item.totalComprado })), tipo: 'barra', horizontal: true, formato: 'moeda', series: [{ chave: 'valor', nome: 'Compras' }] },
-          { titulo: 'Produtos por categoria', dados: produtosPorCategoria.map((item) => ({ label: item.categoria, valor: item.quantidade })), tipo: 'pizza', series: [{ chave: 'valor', nome: 'Produtos' }] },
-          { titulo: 'Ocupação por depósito', dados: ocupacaoPorDeposito, tipo: 'barra', formato: 'percentual', series: [{ chave: 'percentual', nome: 'Ocupação', corCondicional: { campo: 'percentual', limite: 90, acima: 'var(--chart-danger)', abaixo: 'var(--chart-green)' } }] },
-        ]} />
+        <MiniTelas telas={[{ id: 'comercial', label: 'Comercial e compras' }, { id: 'operacao', label: 'Estoque e ocupação' }]} ativa={miniTela} onSelecionar={setMiniTela} />
+        <section id={`painel-${miniTela}`} role="tabpanel" aria-labelledby={`aba-${miniTela}`}>
+          {miniTela === 'comercial' ? (
+            <GraficosAnaliticos graficos={[
+              { titulo: 'Vendas por vendedor', dados: vendasPorVendedor.slice(0, 8).map((item) => ({ label: item.vendedor, valor: item.totalVendido })), tipo: 'barra', horizontal: true, formato: 'moeda', series: [{ chave: 'valor', nome: 'Vendas' }] },
+              { titulo: 'Compras por fornecedor', dados: comprasPorFornecedor.slice(0, 8).map((item) => ({ label: item.fornecedor, valor: item.totalComprado })), tipo: 'barra', horizontal: true, formato: 'moeda', series: [{ chave: 'valor', nome: 'Compras' }] },
+              { titulo: 'Valores por área', dados: [
+                { label: 'Vendas', valor: vendas?.totalVendido || 0 },
+                { label: 'Compras', valor: compras?.totalComprado || 0 },
+                { label: 'Notas de saída', valor: fiscal?.totalFaturado || 0 },
+              ], tipo: 'barra', horizontal: true, formato: 'moeda', series: [{ chave: 'valor', nome: 'Valor' }] },
+              { titulo: 'Títulos vencidos', dados: [
+                { label: 'A receber', valor: financeiro?.totalReceberVencido || 0 },
+                { label: 'A pagar', valor: financeiro?.totalPagarVencido || 0 },
+              ], tipo: 'barra', horizontal: true, formato: 'moeda', series: [{ chave: 'valor', nome: 'Vencido', cor: 'var(--chart-danger)' }] },
+            ]} />
+          ) : (
+            <GraficosAnaliticos graficos={[
+              { titulo: 'Produtos por categoria', dados: produtosPorCategoria.map((item) => ({ label: item.categoria, valor: item.quantidade })), tipo: 'pizza', series: [{ chave: 'valor', nome: 'Produtos' }] },
+              { titulo: 'Ocupação por depósito', dados: ocupacaoPorDeposito, tipo: 'barra', formato: 'percentual', series: [{ chave: 'percentual', nome: 'Ocupação', corCondicional: { campo: 'percentual', limite: 90, acima: 'var(--chart-danger)', abaixo: 'var(--chart-green)' } }] },
+              { titulo: 'Capacidade dos depósitos', dados: capacidadePorDeposito, tipo: 'barra', horizontal: true, empilhado: true, series: [{ chave: 'ocupadas', nome: 'Ocupadas' }, { chave: 'livres', nome: 'Livres' }] },
+              { titulo: 'Situação dos produtos', dados: [
+                { label: 'Ativos sem reposição', valor: Math.max(0, (estoque?.quantidadeAtivos || 0) - (estoque?.produtosParaReposicao || 0)), cor: 'var(--chart-green)' },
+                { label: 'Precisam de reposição', valor: estoque?.produtosParaReposicao || 0, cor: 'var(--chart-danger)' },
+                { label: 'Inativos', valor: Math.max(0, (estoque?.quantidadeProdutos || 0) - (estoque?.quantidadeAtivos || 0)), cor: 'var(--chart-neutral)' },
+              ].filter((item) => item.valor > 0), tipo: 'pizza', series: [{ chave: 'valor', nome: 'Produtos' }] },
+            ]} />
+          )}
+        </section>
         </>
       )}
     </>

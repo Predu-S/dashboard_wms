@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import { api } from '../api'
 import KpiCard from './KpiCard'
 import TabelaDados from './TabelaDados'
 import { usePeriodo } from '../context/PeriodoContext'
 import GraficosAnaliticos from './GraficosAnaliticos'
 import { agruparCampos, agruparPorMes } from './chartUtils'
+import MiniTelas from './MiniTelas'
 
 function formatarMoeda(valor) {
   return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -31,6 +31,7 @@ export default function ComprasPage() {
   const [porFornecedor, setPorFornecedor] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState(null)
+  const [miniTela, setMiniTela] = useState('recebimento')
 
   const comprasPorMes = agruparPorMes(notas, (n) => n.dataEmissao, [{ chave: 'totalComprado', obterValor: (n) => n.valorTotalNota }])
   const notasPorMes = agruparPorMes(notas, (n) => n.dataEmissao, [{ chave: 'notas', obterValor: () => 1 }, { chave: 'volumes', obterValor: (n) => n.volumes }])
@@ -64,31 +65,23 @@ export default function ComprasPage() {
             <KpiCard titulo="Total Comprado" valor={formatarMoeda(resumo.totalComprado)} />
             <KpiCard titulo="Notas de Entrada" valor={resumo.quantidadeNotas} />
             <KpiCard titulo="Valor Médio por Nota" valor={formatarMoeda(resumo.valorMedioPorNota)} />
+            <KpiCard titulo="Fornecedores" valor={new Set(notas.map((n) => n.fornecedor)).size} subtitulo="com notas no período" />
           </section>
 
-          <section className="chart-card">
-            <h3>Compras por Fornecedor</h3>
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={porFornecedor} margin={{ top: 5, right: 10, left: 0, bottom: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
-                <XAxis dataKey="fornecedor" stroke="var(--chart-axis)" interval={0} tick={{ fontSize: 12 }} angle={-30} textAnchor="end" height={50} />
-                <YAxis stroke="var(--chart-axis)" />
-                <Tooltip
-                  cursor={{ fill: 'rgba(255, 255, 255, 0.08)' }}
-                  contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, boxShadow: '0 5px 18px rgba(23,43,58,.12)', color: 'var(--text)' }}
-                  labelStyle={{ color: 'var(--text)' }}
-                  formatter={(value) => [formatarMoeda(value), 'Total']}
-                />
-                <Bar dataKey="totalComprado" fill="var(--chart-green-muted)" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+          <MiniTelas telas={[{ id: 'recebimento', label: 'Compras e recebimento' }, { id: 'fornecedores', label: 'Fornecedores e custos' }]} ativa={miniTela} onSelecionar={setMiniTela} />
+          <section id={`painel-${miniTela}`} role="tabpanel" aria-labelledby={`aba-${miniTela}`}>
+            {miniTela === 'recebimento' ? (
+              <GraficosAnaliticos graficos={[
+                { titulo: 'Evolução mensal das compras', dados: comprasPorMes, tipo: 'area', formato: 'moeda', series: [{ chave: 'totalComprado', nome: 'Compras' }] },
+                { titulo: 'Notas e volumes registrados por mês', dados: notasPorMes, tipo: 'barra', empilhado: false, series: [{ chave: 'notas', nome: 'Notas' }, { chave: 'volumes', nome: 'Volumes' }] },
+              ]} />
+            ) : (
+              <GraficosAnaliticos graficos={[
+                { titulo: 'Compras por fornecedor', dados: porFornecedor.slice(0, 8).map((n) => ({ label: n.fornecedor, valor: n.totalComprado })), tipo: 'barra', horizontal: true, formato: 'moeda', series: [{ chave: 'valor', nome: 'Compras' }] },
+                { titulo: 'Frete e descontos por fornecedor', dados: custosPorFornecedor, tipo: 'barra', horizontal: true, formato: 'moeda', series: [{ chave: 'frete', nome: 'Frete' }, { chave: 'desconto', nome: 'Desconto' }] },
+              ]} />
+            )}
           </section>
-
-          <GraficosAnaliticos graficos={[
-            { titulo: 'Evolução mensal das compras', dados: comprasPorMes, tipo: 'area', formato: 'moeda', series: [{ chave: 'totalComprado', nome: 'Compras' }] },
-            { titulo: 'Notas e volumes recebidos por mês', dados: notasPorMes, tipo: 'barra', empilhado: false, series: [{ chave: 'notas', nome: 'Notas' }, { chave: 'volumes', nome: 'Volumes' }] },
-            { titulo: 'Frete e descontos por fornecedor', dados: custosPorFornecedor, tipo: 'barra', horizontal: true, formato: 'moeda', series: [{ chave: 'frete', nome: 'Frete' }, { chave: 'desconto', nome: 'Desconto' }] },
-          ]} />
 
           <TabelaDados
             titulo="Notas de Entrada"

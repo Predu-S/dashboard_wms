@@ -177,4 +177,3 @@ export default function FiltroData({ atalho, onSelecionarAtalho, dataInicio, dat
     </>
   )
 }
-

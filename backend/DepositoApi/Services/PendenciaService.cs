@@ -67,27 +67,33 @@ public class PendenciaService : IPendenciaService
 /// <summary>Dados fictícios, usados enquanto UsarDadosFicticios estiver true.</summary>
 public class PendenciaServiceMock : IPendenciaService
 {
-    public Task<IEnumerable<Pendencia>> ObterPendenciasAsync()
+    private static List<Pendencia> GerarPendencias()
     {
-        var dados = new List<Pendencia>
+        return new List<Pendencia>
         {
             new() { Endereco = "01 - A - 01 - 01 - 01", Deposito = "01", Tipo = "ENTRADA", Quantidade = 40, Status = "A" },
             new() { Endereco = "01 - A - 01 - 02 - 01", Deposito = "01", Tipo = "SAIDA", Quantidade = 15, Status = "A" },
             new() { Endereco = "01 - B - 02 - 01 - 01", Deposito = "01", Tipo = "TRANSF_DESTINO", Quantidade = 8, Status = "A" },
             new() { Endereco = "02 - A - 01 - 01 - 01", Deposito = "02", Tipo = "TRANSF_ORIGEM", Quantidade = 8, Status = "A" },
+            new() { Endereco = "01 - C - 03 - 02 - 02", Deposito = "01", Tipo = "ENTRADA", Quantidade = 24, Status = "A" },
+            new() { Endereco = "02 - B - 02 - 03 - 01", Deposito = "02", Tipo = "SAIDA", Quantidade = 11, Status = "A" },
+            new() { Endereco = "03 - A - 04 - 01 - 03", Deposito = "03", Tipo = "ENTRADA", Quantidade = 32, Status = "A" },
+            new() { Endereco = "03 - C - 01 - 02 - 04", Deposito = "03", Tipo = "TRANSF_DESTINO", Quantidade = 16, Status = "A" },
+            new() { Endereco = "01 - D - 05 - 01 - 02", Deposito = "01", Tipo = "SAIDA", Quantidade = 19, Status = "A" },
+            new() { Endereco = "02 - C - 03 - 04 - 01", Deposito = "02", Tipo = "ENTRADA", Quantidade = 27, Status = "A" },
+            new() { Endereco = "03 - B - 02 - 02 - 03", Deposito = "03", Tipo = "TRANSF_ORIGEM", Quantidade = 16, Status = "A" },
+            new() { Endereco = "01 - A - 06 - 03 - 01", Deposito = "01", Tipo = "ENTRADA", Quantidade = 13, Status = "A" },
         };
-        return Task.FromResult<IEnumerable<Pendencia>>(dados);
     }
+
+    public Task<IEnumerable<Pendencia>> ObterPendenciasAsync() =>
+        Task.FromResult<IEnumerable<Pendencia>>(GerarPendencias());
 
     public Task<IEnumerable<ResumoPendencias>> ObterResumoPorTipoAsync()
     {
-        var dados = new List<ResumoPendencias>
-        {
-            new() { Tipo = "ENTRADA", Quantidade = 12 },
-            new() { Tipo = "SAIDA", Quantidade = 7 },
-            new() { Tipo = "TRANSF_DESTINO", Quantidade = 3 },
-            new() { Tipo = "TRANSF_ORIGEM", Quantidade = 3 },
-        };
+        var dados = GerarPendencias().GroupBy(pendencia => pendencia.Tipo)
+            .Select(grupo => new ResumoPendencias { Tipo = grupo.Key, Quantidade = grupo.Count() })
+            .OrderBy(resumo => resumo.Tipo).ToList();
         return Task.FromResult<IEnumerable<ResumoPendencias>>(dados);
     }
 }

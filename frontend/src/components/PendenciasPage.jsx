@@ -3,6 +3,7 @@ import { api } from '../api'
 import KpiCard from './KpiCard'
 import TabelaDados from './TabelaDados'
 import GraficosAnaliticos from './GraficosAnaliticos'
+import MiniTelas from './MiniTelas'
 import { agruparCampos, agruparSoma } from './chartUtils'
 
 const ROTULOS_TIPO = {
@@ -25,6 +26,7 @@ export default function PendenciasPage() {
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState(null)
   const [filtroTipo, setFiltroTipo] = useState('todos')
+  const [miniTela, setMiniTela] = useState('geral')
 
   useEffect(() => {
     Promise.all([api.pendencias(), api.pendenciasResumo()])
@@ -46,6 +48,7 @@ export default function PendenciasPage() {
   const quantidadePorDeposito = agruparSoma(pendencias, (p) => `Depósito ${p.deposito}`, (p) => p.quantidade, 'label', 'unidades')
   const tiposPorDeposito = agruparCampos(pendencias, (p) => `Depósito ${p.deposito}`, (p) => ({ [p.tipo]: 1 }))
   const seriesPorTipo = Object.entries(ROTULOS_TIPO).map(([tipo, rotulo]) => ({ chave: tipo, nome: rotulo }))
+  const enderecosComPendencias = agruparSoma(pendencias, (p) => `Dep. ${p.deposito} · ${p.endereco}`, (p) => p.quantidade, 'label', 'unidades').slice(0, 10)
 
   return (
     <>
@@ -73,11 +76,20 @@ export default function PendenciasPage() {
             ))}
           </section>
 
-          <GraficosAnaliticos graficos={[
-            { titulo: 'Pendências por tipo', dados: pendenciasPorTipo, tipo: 'pizza', series: [{ chave: 'valor', nome: 'Pendências' }] },
-            { titulo: 'Unidades em aberto por depósito', dados: quantidadePorDeposito, tipo: 'barra', horizontal: true, series: [{ chave: 'unidades', nome: 'Unidades' }] },
-            { titulo: 'Composição das pendências por depósito', dados: tiposPorDeposito, tipo: 'barra', empilhado: true, series: seriesPorTipo },
-          ]} />
+          <MiniTelas telas={[{ id: 'geral', label: 'Visão geral' }, { id: 'localizacao', label: 'Por localização' }]} ativa={miniTela} onSelecionar={setMiniTela} />
+          <section id={`painel-${miniTela}`} role="tabpanel" aria-labelledby={`aba-${miniTela}`}>
+            {miniTela === 'geral' ? (
+              <GraficosAnaliticos graficos={[
+                { titulo: 'Pendências por tipo', dados: pendenciasPorTipo, tipo: 'pizza', series: [{ chave: 'valor', nome: 'Pendências' }] },
+                { titulo: 'Unidades em aberto por depósito', dados: quantidadePorDeposito, tipo: 'barra', horizontal: true, series: [{ chave: 'unidades', nome: 'Unidades' }] },
+              ]} />
+            ) : (
+              <GraficosAnaliticos graficos={[
+                { titulo: 'Composição das pendências por depósito', dados: tiposPorDeposito, tipo: 'barra', empilhado: true, series: seriesPorTipo },
+                { titulo: 'Endereços com mais unidades pendentes', dados: enderecosComPendencias, tipo: 'barra', horizontal: true, series: [{ chave: 'unidades', nome: 'Unidades' }] },
+              ]} />
+            )}
+          </section>
 
           <TabelaDados
             titulo="Detalhamento das Pendências"

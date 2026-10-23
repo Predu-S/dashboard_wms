@@ -140,18 +140,41 @@ public class FinanceiroService : IFinanceiroService
 /// <summary>Dados fictícios, usados enquanto UsarDadosFicticios estiver true.</summary>
 public class FinanceiroServiceMock : IFinanceiroService
 {
-    private readonly List<ContaReceber> _receber = new()
-    {
-        new() { Cliente = "Mercado Bom Preço", NumTit = "R-001", DtEmissao = DateTime.Today.AddDays(-30), DtVencto = DateTime.Today.AddDays(5), Valor = 4200m, ValorPg = 0, Juros = 0, Desconto = 0 },
-        new() { Cliente = "Distribuidora Sertão", NumTit = "R-002", DtEmissao = DateTime.Today.AddDays(-40), DtVencto = DateTime.Today.AddDays(-3), Valor = 8900m, ValorPg = 0, Juros = 0, Desconto = 0 },
-        new() { Cliente = "Comercial Silva", NumTit = "R-003", DtEmissao = DateTime.Today.AddDays(-20), DtVencto = DateTime.Today.AddDays(10), Valor = 1500m, ValorPg = 1500m, DtPagto = DateTime.Today.AddDays(-1), Juros = 0, Desconto = 0 },
-    };
+    private readonly List<ContaReceber> _receber;
+    private readonly List<ContaPagar> _pagar;
 
-    private readonly List<ContaPagar> _pagar = new()
+    public FinanceiroServiceMock()
     {
-        new() { Fornecedor = "Distribuidora ABC", NumTit = "P-001", DtEmissao = DateTime.Today.AddDays(-25), DtVenc = DateTime.Today.AddDays(3), VrAPagar = 3200m, VrPago = 0, Juros = 0, Desconto = 0 },
-        new() { Fornecedor = "Indústria XYZ", NumTit = "P-002", DtEmissao = DateTime.Today.AddDays(-35), DtVenc = DateTime.Today.AddDays(-5), VrAPagar = 6100m, VrPago = 0, Juros = 0, Desconto = 0 },
-    };
+        var clientes = new[] { "Mercado Bom Preço", "Distribuidora Sertão", "Comercial Silva", "Atacadão Norte", "Empório Central", "Mercantil Fortaleza", "Supermercado Pague Menos", "Casa do Nordeste" };
+        var fornecedores = new[] { "Distribuidora ABC", "Indústria XYZ", "Atacado Nordeste", "Alimentos União", "Limpeza Total", "Bebidas Brasil" };
+        var random = new Random(20261021);
+        _receber = Enumerable.Range(0, 90).Select(dia =>
+        {
+            var emissao = DateTime.Today.AddDays(-dia);
+            var dataPagamento = emissao.AddDays(7 + dia % 14);
+            var pago = dia % 4 == 0 && dataPagamento <= DateTime.Today;
+            var valor = random.Next(900, 18000);
+            return new ContaReceber
+            {
+                Cliente = clientes[random.Next(clientes.Length)], NumTit = $"R-{1001 + dia}", DtEmissao = emissao,
+                DtVencto = emissao.AddDays(12 + dia % 23), DtPagto = pago ? dataPagamento : null,
+                Valor = valor, ValorPg = pago ? valor : 0, Juros = 0, Desconto = 0,
+            };
+        }).ToList();
+        _pagar = Enumerable.Range(0, 90).Select(dia =>
+        {
+            var emissao = DateTime.Today.AddDays(-dia);
+            var dataPagamento = emissao.AddDays(5 + dia % 18);
+            var pago = dia % 3 == 0 && dataPagamento <= DateTime.Today;
+            var valor = random.Next(700, 14500);
+            return new ContaPagar
+            {
+                Fornecedor = fornecedores[random.Next(fornecedores.Length)], NumTit = $"P-{2001 + dia}", DtEmissao = emissao,
+                DtVenc = emissao.AddDays(10 + dia % 25), DtPag = pago ? dataPagamento : null,
+                VrAPagar = valor, VrPago = pago ? valor : 0, Juros = 0, Desconto = 0,
+            };
+        }).ToList();
+    }
 
     private static bool DentroDoPeriodo(DateTime data, DateTime? inicio, DateTime? fim) =>
         (!inicio.HasValue || data.Date >= inicio.Value.Date) && (!fim.HasValue || data.Date <= fim.Value.Date);

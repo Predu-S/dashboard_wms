@@ -4,7 +4,7 @@ import { calcularPeriodo } from '../components/FiltroData'
 const PeriodoContext = createContext(null)
 
 export function PeriodoProvider({ children }) {
-  const [atalho, setAtalho] = useState('hoje')
+  const [atalho, setAtalho] = useState('30dias')
   const [dataInicioCustom, setDataInicioCustom] = useState('')
   const [dataFimCustom, setDataFimCustom] = useState('')
 

@@ -109,12 +109,25 @@ public class CompraService : ICompraService
 /// <summary>Dados fictícios, usados enquanto UsarDadosFicticios estiver true.</summary>
 public class CompraServiceMock : ICompraService
 {
-    private readonly List<NotaCompra> _notas = new()
+    private readonly List<NotaCompra> _notas;
+
+    public CompraServiceMock()
     {
-        new() { Fornecedor = "Distribuidora ABC", NumNota = "5001", Serie = "1", DataEmissao = DateTime.Today.AddDays(-4), DataEntradaLoja = DateTime.Today.AddDays(-3), ValorTotalNota = 6200m, ValorFrete = 150m, Desconto = 0, Volumes = 12 },
-        new() { Fornecedor = "Indústria XYZ", NumNota = "5002", Serie = "1", DataEmissao = DateTime.Today.AddDays(-6), DataEntradaLoja = DateTime.Today.AddDays(-5), ValorTotalNota = 9800m, ValorFrete = 300m, Desconto = 200m, Volumes = 20 },
-        new() { Fornecedor = "Distribuidora ABC", NumNota = "5003", Serie = "1", DataEmissao = DateTime.Today.AddDays(-10), DataEntradaLoja = DateTime.Today.AddDays(-9), ValorTotalNota = 3100m, ValorFrete = 0, Desconto = 0, Volumes = 6 },
-    };
+        var fornecedores = new[] { "Distribuidora ABC", "Indústria XYZ", "Atacado Nordeste", "Alimentos União", "Limpeza Total", "Bebidas Brasil" };
+        var random = new Random(50012026);
+        _notas = Enumerable.Range(0, 72).Select(dia =>
+        {
+            var emissao = DateTime.Today.AddDays(-dia);
+            var frete = random.Next(0, 500);
+            var desconto = random.Next(0, 300);
+            return new NotaCompra
+            {
+                Fornecedor = fornecedores[random.Next(fornecedores.Length)], NumNota = (5001 + dia).ToString(), Serie = "1",
+                DataEmissao = emissao, DataEntradaLoja = emissao.AddDays(1), ValorTotalNota = random.Next(1800, 32000),
+                ValorFrete = frete, Desconto = desconto, Volumes = random.Next(3, 45),
+            };
+        }).ToList();
+    }
 
     private IEnumerable<NotaCompra> Filtrar(DateTime? dataInicio, DateTime? dataFim) =>
         _notas.Where(n =>

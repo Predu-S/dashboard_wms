@@ -163,4 +163,3 @@ export default function Layout({ onLogout }) {
     </PeriodoProvider>
   )
 }
-

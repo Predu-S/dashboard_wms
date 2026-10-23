@@ -49,6 +49,18 @@ const ITENS_BUSCA = [
   { rotulo: 'Contas a Pagar', rota: '/financeiro', tipo: 'Gráfico', icone: BarChart3 },
 ]
 
+const TITULOS_POR_ROTA = {
+  '/': 'Visão Geral',
+  '/estoque': 'Estoque',
+  '/ocupacao': 'Ocupação',
+  '/ocupacao/pendencias': 'Pendências',
+  '/vendas': 'Vendas',
+  '/financeiro': 'Financeiro',
+  '/compras': 'Compras / Fornecedores',
+  '/fiscal': 'Fiscal',
+  '/configuracoes': 'Configurações',
+}
+
 function normalizar(texto) {
   return texto
     .toLowerCase()
@@ -60,6 +72,7 @@ export default function Topbar({ onLogout, tema = 'claro', onAlternarTema }) {
   const usuario = obterUsuario() || 'Usuário'
   const navigate = useNavigate()
   const location = useLocation()
+  const tituloPagina = TITULOS_POR_ROTA[location.pathname] || 'Dashboard Demo'
   const { atalho, setAtalho, dataInicioCustom, setDataInicioCustom, dataFimCustom, setDataFimCustom } = usePeriodo()
   const containerRef = useRef(null)
 
@@ -126,6 +139,8 @@ export default function Topbar({ onLogout, tema = 'claro', onAlternarTema }) {
         )}
       </div>
 
+      <h1 className="topbar__titulo">{tituloPagina}</h1>
+
       <div className="topbar__acoes">
         {location.pathname !== '/configuracoes' && (
           <div className="topbar__periodo">
@@ -178,4 +193,3 @@ export default function Topbar({ onLogout, tema = 'claro', onAlternarTema }) {
     </header>
   )
 }
-

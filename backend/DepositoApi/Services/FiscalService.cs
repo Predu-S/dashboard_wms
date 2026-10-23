@@ -110,12 +110,26 @@ public class FiscalService : IFiscalService
 /// <summary>Dados fictícios, usados enquanto UsarDadosFicticios estiver true.</summary>
 public class FiscalServiceMock : IFiscalService
 {
-    private readonly List<NotaFiscal> _notas = new()
+    private readonly List<NotaFiscal> _notas;
+
+    public FiscalServiceMock()
     {
-        new() { Codigo = "9001", Serie = "1", Cfop = "5102", Cliente = "Mercado Bom Preço", Vendedor = "Carlos Souza", DtSaida = DateTime.Today.AddDays(-2), ValorTotalProdutos = 4000m, ValorTotalNota = 4200m },
-        new() { Codigo = "9002", Serie = "1", Cfop = "6108", Cliente = "Distribuidora Sertão", Vendedor = "Ana Lima", DtSaida = DateTime.Today.AddDays(-3), ValorTotalProdutos = 8500m, ValorTotalNota = 8900m },
-        new() { Codigo = "9003", Serie = "1", Cfop = "5102", Cliente = "Comercial Silva", Vendedor = "Carlos Souza", DtSaida = DateTime.Today.AddDays(-5), ValorTotalProdutos = 1400m, ValorTotalNota = 1500m },
-    };
+        var clientes = new[] { "Mercado Bom Preço", "Distribuidora Sertão", "Comercial Silva", "Atacadão Norte", "Empório Central", "Mercantil Fortaleza", "Supermercado Pague Menos", "Casa do Nordeste" };
+        var vendedores = new[] { "Carlos Souza", "Ana Lima", "Marcos Alves", "Juliana Costa", "Rafael Mendes" };
+        var cfops = new[] { "5102", "6108", "5101", "6102" };
+        var random = new Random(51022026);
+        _notas = Enumerable.Range(0, 90).Select(dia =>
+        {
+            var produtos = random.Next(900, 28000);
+            return new NotaFiscal
+            {
+                Codigo = (9001 + dia).ToString(), Serie = "1", Cfop = cfops[random.Next(cfops.Length)],
+                Cliente = clientes[random.Next(clientes.Length)], Vendedor = vendedores[random.Next(vendedores.Length)],
+                DtSaida = DateTime.Today.AddDays(-dia), ValorTotalProdutos = produtos,
+                ValorTotalNota = produtos + random.Next(50, 900),
+            };
+        }).ToList();
+    }
 
     private IEnumerable<NotaFiscal> Filtrar(DateTime? dataInicio, DateTime? dataFim) =>
         _notas.Where(n =>

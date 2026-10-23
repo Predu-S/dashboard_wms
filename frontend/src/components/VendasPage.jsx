@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import { api } from '../api'
 import KpiCard from './KpiCard'
 import TabelaDados from './TabelaDados'
 import { usePeriodo } from '../context/PeriodoContext'
 import GraficosAnaliticos from './GraficosAnaliticos'
 import { agruparPorMes, agruparSoma } from './chartUtils'
+import MiniTelas from './MiniTelas'
 
 function formatarMoeda(valor) {
   return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -33,10 +33,14 @@ export default function VendasPage() {
   const [produtosMaisVendidos, setProdutosMaisVendidos] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState(null)
+  const [miniTela, setMiniTela] = useState('desempenho')
 
   const vendasPorMes = agruparPorMes(vendas, (v) => v.data, [{ chave: 'totalVendido', obterValor: (v) => v.valor }])
+  const pedidosPorMes = agruparPorMes(vendas, (v) => v.data, [{ chave: 'pedidos', obterValor: () => 1 }])
   const vendasPorCliente = agruparSoma(vendas, (v) => v.cliente, (v) => v.valor, 'label', 'valor').slice(0, 8)
   const vendasPorDia = agruparSoma(vendas, (v) => new Intl.DateTimeFormat('pt-BR', { weekday: 'long' }).format(new Date(v.data)), (v) => v.valor, 'label', 'valor')
+  const pedidosPorDia = agruparSoma(vendas, (v) => new Intl.DateTimeFormat('pt-BR', { weekday: 'long' }).format(new Date(v.data)), () => 1, 'label', 'valor')
+  const vendasPorVendedor = agruparSoma(vendas, (v) => v.vendedor, (v) => v.valor, 'label', 'valor').slice(0, 8)
 
   useEffect(() => {
     setCarregando(true)
@@ -72,66 +76,30 @@ export default function VendasPage() {
             <KpiCard titulo="Total Vendido" valor={formatarMoeda(resumo.totalVendido)} />
             <KpiCard titulo="Pedidos" valor={resumo.quantidadePedidos} />
             <KpiCard titulo="Ticket Médio" valor={formatarMoeda(resumo.ticketMedio)} />
+            <KpiCard titulo="Clientes Atendidos" valor={new Set(vendas.map((v) => v.cliente)).size} subtitulo="no período selecionado" />
           </section>
 
-          <section className="grid-principal">
-            <div className="chart-card">
-              <h3>Vendas por Vendedor</h3>
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={porVendedor} margin={{ top: 5, right: 10, left: 0, bottom: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
-                  <XAxis dataKey="vendedor" stroke="var(--chart-axis)" interval={0} tick={{ fontSize: 12 }} angle={-30} textAnchor="end" height={50} />
-                  <YAxis stroke="var(--chart-axis)" />
-                  <Tooltip
-                    cursor={{ fill: 'rgba(255, 255, 255, 0.08)' }}
-                    contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, boxShadow: '0 5px 18px rgba(23,43,58,.12)', color: 'var(--text)' }}
-                    labelStyle={{ color: 'var(--text)' }}
-                    formatter={(value) => [formatarMoeda(value), 'Total']}
-                  />
-                  <Bar dataKey="totalVendido" fill="var(--chart-green)" radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-
-            <TabelaDados
-              titulo="Pedidos"
-              colunas={COLUNAS_PEDIDOS}
-              dados={vendas}
-              nomeArquivoCsv="vendas-pedidos"
-              mensagemVazia="Nenhuma venda no período."
-            />
+          <MiniTelas telas={[{ id: 'desempenho', label: 'Desempenho' }, { id: 'pedidos', label: 'Pedidos e mix' }]} ativa={miniTela} onSelecionar={setMiniTela} />
+          <section id={`painel-${miniTela}`} role="tabpanel" aria-labelledby={`aba-${miniTela}`}>
+            {miniTela === 'desempenho' ? (
+              <GraficosAnaliticos graficos={[
+                { titulo: 'Evolução mensal do faturamento', dados: vendasPorMes, tipo: 'area', formato: 'moeda', series: [{ chave: 'totalVendido', nome: 'Faturamento' }] },
+                { titulo: 'Vendas por vendedor', dados: vendasPorVendedor, tipo: 'barra', horizontal: true, formato: 'moeda', series: [{ chave: 'valor', nome: 'Vendas' }] },
+                { titulo: 'Evolução mensal de pedidos', dados: pedidosPorMes, tipo: 'barra', series: [{ chave: 'pedidos', nome: 'Pedidos', cor: 'var(--chart-blue)' }] },
+                { titulo: 'Pedidos por dia da semana', dados: pedidosPorDia, tipo: 'barra', series: [{ chave: 'valor', nome: 'Pedidos', cor: 'var(--chart-green)' }] },
+              ]} />
+            ) : (
+              <>
+                <GraficosAnaliticos graficos={[
+                  { titulo: 'Produtos com maior faturamento', dados: produtosMaisVendidos.slice(0, 8).map((p) => ({ label: p.produto, valor: p.totalVendido })), tipo: 'barra', horizontal: true, formato: 'moeda', series: [{ chave: 'valor', nome: 'Vendido' }] },
+                  { titulo: 'Clientes com maior volume de compras', dados: vendasPorCliente, tipo: 'barra', horizontal: true, formato: 'moeda', series: [{ chave: 'valor', nome: 'Vendido' }] },
+                  { titulo: 'Faturamento por dia da semana', dados: vendasPorDia, tipo: 'barra', formato: 'moeda', series: [{ chave: 'valor', nome: 'Faturamento' }] },
+                  { titulo: 'Unidades vendidas por produto', dados: produtosMaisVendidos.slice(0, 8).map((p) => ({ label: p.produto, unidades: p.quantidadeVendida })), tipo: 'barra', horizontal: true, series: [{ chave: 'unidades', nome: 'Unidades' }] },
+                ]} />
+                <TabelaDados titulo="Pedidos" colunas={COLUNAS_PEDIDOS} dados={vendas} nomeArquivoCsv="vendas-pedidos" mensagemVazia="Nenhuma venda no período." />
+              </>
+            )}
           </section>
-
-          <section className="chart-card" style={{ marginTop: 20 }}>
-            <h3>Produtos Mais Vendidos</h3>
-            <ResponsiveContainer width="100%" height={Math.min(245, Math.max(180, produtosMaisVendidos.length * 30))}>
-              <BarChart
-                data={produtosMaisVendidos}
-                layout="vertical"
-                margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
-                <XAxis type="number" stroke="var(--chart-axis)" />
-                <YAxis type="category" dataKey="produto" stroke="var(--chart-axis)" width={160} tick={{ fontSize: 12 }} />
-                <Tooltip
-                  cursor={{ fill: 'rgba(255, 255, 255, 0.08)' }}
-                  contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8, boxShadow: '0 5px 18px rgba(23,43,58,.12)', color: 'var(--text)' }}
-                  labelStyle={{ color: 'var(--text)' }}
-                  formatter={(value, nome) => [
-                    nome === 'totalVendido' ? formatarMoeda(value) : value,
-                    nome === 'totalVendido' ? 'Total Vendido' : 'Quantidade',
-                  ]}
-                />
-                <Bar dataKey="totalVendido" fill="var(--chart-green-soft)" radius={[0, 6, 6, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </section>
-
-          <GraficosAnaliticos graficos={[
-            { titulo: 'Evolução mensal do faturamento', dados: vendasPorMes, tipo: 'area', formato: 'moeda', series: [{ chave: 'totalVendido', nome: 'Faturamento' }] },
-            { titulo: 'Clientes com maior volume de compras', dados: vendasPorCliente, tipo: 'barra', horizontal: true, formato: 'moeda', series: [{ chave: 'valor', nome: 'Vendido' }] },
-            { titulo: 'Faturamento por dia da semana', dados: vendasPorDia, tipo: 'barra', formato: 'moeda', series: [{ chave: 'valor', nome: 'Faturamento' }] },
-          ]} />
         </>
       )}
     </>

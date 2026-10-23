@@ -73,25 +73,39 @@ public class OcupacaoService : IOcupacaoService
 /// </summary>
 public class OcupacaoServiceMock : IOcupacaoService
 {
-    public Task<IEnumerable<OcupacaoDeposito>> ObterOcupacaoDetalhadaAsync()
+    private static List<OcupacaoDeposito> GerarEnderecos()
     {
-        var dados = new List<OcupacaoDeposito>
+        return Enumerable.Range(0, 36).Select(indice =>
         {
-            new() { Deposito = "01", Rua = "A", Predio = "01", Andar = "01", Apartamento = "01", CapacidadeTotal = 100, QuantidadeOcupada = 82 },
-            new() { Deposito = "01", Rua = "A", Predio = "01", Andar = "02", Apartamento = "01", CapacidadeTotal = 100, QuantidadeOcupada = 65 },
-            new() { Deposito = "01", Rua = "B", Predio = "02", Andar = "01", Apartamento = "01", CapacidadeTotal = 120, QuantidadeOcupada = 118 },
-            new() { Deposito = "02", Rua = "A", Predio = "01", Andar = "01", Apartamento = "01", CapacidadeTotal = 80,  QuantidadeOcupada = 40 },
-        };
-        return Task.FromResult<IEnumerable<OcupacaoDeposito>>(dados);
+            var capacidade = 60 + indice % 9 * 10;
+            var ocupacao = indice % 7 == 0 ? capacidade - 2
+                : indice % 5 == 0 ? 0
+                : (int)(capacidade * (25 + (indice * 17) % 66) / 100.0);
+            return new OcupacaoDeposito
+            {
+                Deposito = (indice % 3 + 1).ToString("00"),
+                Rua = ((char)('A' + indice / 9 % 4)).ToString(),
+                Predio = (indice / 3 % 6 + 1).ToString("00"),
+                Andar = (indice % 4 + 1).ToString("00"),
+                Apartamento = (indice / 2 % 5 + 1).ToString("00"),
+                CapacidadeTotal = capacidade,
+                QuantidadeOcupada = ocupacao,
+            };
+        }).ToList();
     }
+
+    public Task<IEnumerable<OcupacaoDeposito>> ObterOcupacaoDetalhadaAsync() =>
+        Task.FromResult<IEnumerable<OcupacaoDeposito>>(GerarEnderecos());
 
     public Task<IEnumerable<ResumoOcupacaoDeposito>> ObterResumoPorDepositoAsync()
     {
-        var dados = new List<ResumoOcupacaoDeposito>
-        {
-            new() { Deposito = "01", CapacidadeTotal = 320, QuantidadeOcupada = 265 },
-            new() { Deposito = "02", CapacidadeTotal = 80,  QuantidadeOcupada = 40 },
-        };
+        var dados = GerarEnderecos().GroupBy(endereco => endereco.Deposito)
+            .Select(grupo => new ResumoOcupacaoDeposito
+            {
+                Deposito = grupo.Key,
+                CapacidadeTotal = grupo.Sum(endereco => endereco.CapacidadeTotal),
+                QuantidadeOcupada = grupo.Sum(endereco => endereco.QuantidadeOcupada),
+            }).OrderBy(resumo => resumo.Deposito).ToList();
         return Task.FromResult<IEnumerable<ResumoOcupacaoDeposito>>(dados);
     }
 }

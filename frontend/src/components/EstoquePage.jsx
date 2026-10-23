@@ -4,6 +4,7 @@ import { api } from '../api'
 import KpiCard from './KpiCard'
 import TabelaDados from './TabelaDados'
 import GraficosAnaliticos from './GraficosAnaliticos'
+import MiniTelas from './MiniTelas'
 import { agruparSoma } from './chartUtils'
 
 function formatarMoeda(valor) {
@@ -55,6 +56,7 @@ export default function EstoquePage() {
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState(null)
   const [modalReposicaoAberto, setModalReposicaoAberto] = useState(false)
+  const [miniTela, setMiniTela] = useState('posicao')
 
   useEffect(() => {
     Promise.all([api.produtos(), api.produtosResumo(), api.produtosPorCategoria()])
@@ -116,15 +118,20 @@ export default function EstoquePage() {
             />
           </section>
 
-          <GraficosAnaliticos graficos={[
-            { titulo: 'Produtos por categoria', dados: porCategoria.map((c) => ({ label: c.categoria, quantidade: c.quantidade })), tipo: 'barra', horizontal: true, altura: 180, series: [{ chave: 'quantidade', nome: 'Produtos' }] },
-          ]} />
-
-          <GraficosAnaliticos graficos={[
-            { titulo: 'Unidades em estoque por grupo', dados: estoquePorGrupo, tipo: 'barra', horizontal: true, series: [{ chave: 'unidades', nome: 'Unidades' }] },
-            { titulo: 'Valor em estoque por categoria', dados: valorPorCategoria, tipo: 'barra', horizontal: true, formato: 'moeda', series: [{ chave: 'valor', nome: 'Valor' }] },
-            { titulo: 'Situação do cadastro', dados: situacaoProdutos, tipo: 'pizza', categoria: 'label', series: [{ chave: 'valor', nome: 'Produtos' }] },
-          ]} />
+          <MiniTelas telas={[{ id: 'posicao', label: 'Posição do estoque' }, { id: 'composicao', label: 'Valor e composição' }]} ativa={miniTela} onSelecionar={setMiniTela} />
+          <section id={`painel-${miniTela}`} role="tabpanel" aria-labelledby={`aba-${miniTela}`}>
+            {miniTela === 'posicao' ? (
+              <GraficosAnaliticos graficos={[
+                { titulo: 'Unidades em estoque por grupo', dados: estoquePorGrupo, tipo: 'barra', horizontal: true, series: [{ chave: 'unidades', nome: 'Unidades' }] },
+                { titulo: 'Situação do estoque', dados: situacaoProdutos, tipo: 'pizza', categoria: 'label', series: [{ chave: 'valor', nome: 'Produtos' }] },
+              ]} />
+            ) : (
+              <GraficosAnaliticos graficos={[
+                { titulo: 'Valor em estoque por categoria', dados: valorPorCategoria, tipo: 'barra', horizontal: true, formato: 'moeda', series: [{ chave: 'valor', nome: 'Valor' }] },
+                { titulo: 'Produtos por categoria', dados: porCategoria.map((c) => ({ label: c.categoria, quantidade: c.quantidade })), tipo: 'barra', horizontal: true, altura: 180, series: [{ chave: 'quantidade', nome: 'Produtos' }] },
+              ]} />
+            )}
+          </section>
 
           <TabelaDados
             titulo="Produtos"
